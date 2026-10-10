@@ -1,6 +1,6 @@
 # Telegram hosting
 
-Bot [@whoofserveybot](https://t.me/whoofserveybot), verified through getMe. No active webhook. Runtime publication is ready; live server installation is pending.
+Bot [@whoofserveybot](https://t.me/whoofserveybot), verified through getMe. No active webhook. Runtime deployed on2026-10-10; service active/enabled, Telegram readiness and manual restart checked.
 
 Python3.10+ with SQLite/SSL and systemd are required. Runtime uses only the Python standard library. The script does not install packages, reinstall the OS, change network settings or reboot the server.
 
@@ -27,4 +27,4 @@ Export contains completed responses without Telegram chat IDs or contacts. Conta
 
 State mutations and Telegram update cursor are committed together; retried delivery cannot apply the same answer twice. A failure after committing an answer can leave the next message undelivered; `/start` resumes from the saved question. Telegram message delivery itself is not exactly-once. A file lock prevents two pollers sharing one data directory. Do not run another polling instance with a separate directory and the same token.
 
-Verification before participant invitation: service active, restart retains state, `/start` and buttons work in Telegram, one eligible core path completes, invalid amounts/notes are rejected, consent/contact separation and deletion work. Live participant interaction remains untested until installation is verified.
+Verification before participant invitation: service active, restart retains state, `/start` and buttons work in Telegram, one eligible core path completes, invalid amounts/notes are rejected, consent/contact separation and deletion work. All20 tests pass on the VPS. State directory700, databases600 and root secret600 verified; manual restart retains SQLite files. Live /start/buttons and a full participant path await organizer pilot.

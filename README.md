@@ -25,4 +25,4 @@ One question at a time, inline buttons, branching, saved progress, `/start`, `/b
 
 Private databases live in `/var/lib/whoof-survey/`: responses/Telegram chat IDs and voluntary contacts are stored separately, linked by participant code. This is not anonymity or encryption. Inactive records are purged after365 days. Organizer must also manage exported copies and backups.
 
-See [operations](deploy/README.md) for status/restart/export commands. Live server deployment and end-to-end Telegram verification are still pending.
+See [operations](deploy/README.md) for status/restart/export commands. Deployed on Linux/systemd on2026-10-10. All20 tests pass on the host; service active/enabled and manual restart preserves private SQLite files. Actual /start/buttons and a full participant path await organizer pilot.
