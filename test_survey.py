@@ -6,6 +6,7 @@ from pathlib import Path
 from engine import Engine
 from storage import Store
 from bot import SurveyBot, Telegram
+from presentation import caption, needs_details
 
 
 class FakeTelegram:
@@ -92,44 +93,95 @@ class SurveyTests(unittest.TestCase):
         self.bot.handle({'callback_query':{'id':'test','data':s['nonce']+'|'+action,
                         'message':{'chat':{'id':1,'type':'private'}}}})
 
-    def test_number_buttons_match_full_shuffled_options(self):
+    def test_readable_labels_are_short_unique_and_not_truncated(self):
+        for qid,q in self.e.questions.items():
+            labels=[caption(qid,o) for o in q.get('options',[])]
+            self.assertEqual(len(labels),len(set(labels)),qid)
+            for label in labels:
+                self.assertLessEqual(len(label),28,(qid,label))
+                self.assertFalse(label.isdigit(),(qid,label))
+        self.assertEqual(caption('S03',{'code':'c2','label':'unused'}),'Ухаживаем вместе')
+
+    def test_text_buttons_keep_shuffled_codes_and_selection(self):
         s=self.at_question('Q07'); args=self.api.calls[-1][1]
         options=self.e.options('Q07',s['participant'])
-        buttons=[b for row in args['reply_markup']['inline_keyboard'] for b in row
-                 if b['callback_data'].split('|')[-1] in {o['code'] for o in options}]
-        self.assertEqual([b['text'] for b in buttons],[str(i+1) for i in range(len(options))])
-        self.assertEqual([b['callback_data'].split('|')[-1] for b in buttons],[o['code'] for o in options])
-        for i,o in enumerate(options): self.assertIn(f'{i+1}. {o["label"]}',args['text'])
+        option_rows=[row for row in args['reply_markup']['inline_keyboard']
+                     if row[0]['callback_data'].split('|')[-1] in {o['code'] for o in options}]
+        self.assertTrue(all(len(row)==1 for row in option_rows))
+        self.assertEqual([row[0]['text'] for row in option_rows],[caption('Q07',o) for o in options])
+        self.assertEqual([row[0]['callback_data'].split('|')[-1] for row in option_rows],[o['code'] for o in options])
         self.callback(s,options[0]['code'])
-        self.assertIn('✓ 1',[b['text'] for row in self.api.calls[-1][1]['reply_markup']['inline_keyboard'] for b in row])
+        buttons=[b['text'] for row in self.api.calls[-1][1]['reply_markup']['inline_keyboard'] for b in row]
+        self.assertIn('✓ '+caption('Q07',options[0]),buttons)
+        self.assertNotIn('Добавить пояснение',buttons)
 
-    def test_money_specials_have_full_numbered_text(self):
-        s=self.at_question('Q14'); text=self.api.calls[-1][1]['text']
-        for i,o in enumerate(self.e.options('Q14',s['participant'])):
-            self.assertIn(f'{i+1}. {o["label"]}',text)
+    def test_full_wording_can_expand_without_changing_answer(self):
+        s=self.at_question('Q05'); self.callback(s,'details'); s=self.store.load(1)
+        self.assertEqual(self.api.calls[-1][0],'editMessageText')
+        for option in self.e.options('Q05',s['participant']):
+            self.assertIn(option['label'],self.api.calls[-1][1]['text'])
+        self.assertNotIn('Q05',s['answers'])
+        self.callback(s,'details'); self.assertNotIn('show_options',self.store.load(1))
+
+    def test_money_specials_have_readable_buttons(self):
+        s=self.at_question('Q14'); args=self.api.calls[-1][1]
+        buttons=[b['text'] for row in args['reply_markup']['inline_keyboard'] for b in row]
+        for o in self.e.options('Q14',s['participant']): self.assertIn(caption('Q14',o),buttons)
         self.callback(s,'unknown')
         self.assertEqual(self.store.load(1)['answers']['Q14'],'unknown')
 
-    def test_note_toggle_context_validation_and_back(self):
-        s=self.at_question('Q06'); self.callback(s,'note'); s=self.store.load(1)
-        self.assertEqual(self.api.calls[-1][0],'editMessageText')
-        self.assertIn('Сначала выберите',self.api.calls[-1][1]['text'])
-        self.callback(s,'note'); s=self.store.load(1)
-        self.assertNotIn('want_note',s)
-        self.callback(s,'note'); s=self.store.load(1)
-        code=self.e.options('Q06',s['participant'])[0]['code']
+    def test_note_after_answer_keeps_next_question_and_context(self):
+        s=self.at_question('Q06'); code=self.e.options('Q06',s['participant'])[0]['code']
         self.callback(s,code); s=self.store.load(1)
+        self.assertEqual(self.bot.current(s),'Q07')
+        self.assertNotIn('note_for',s)
+        self.callback(s,'prevnote'); s=self.store.load(1)
         args=self.api.calls[-1][1]
         self.assertIn(self.e.questions['Q06']['title'],args['text'])
         self.assertIn(next(o['label'] for o in self.e.questions['Q06']['options'] if o['code']==code),args['text'])
         self.assertIn('Напишите пояснение сообщением',args['text'])
         with self.assertRaises(ValueError): self.bot.answer(1,s,'x'*501)
         self.assertEqual(s['note_for'],'Q06')
-        self.bot.answer(1,s,'Тестовое пояснение')
-        self.assertEqual(self.store.load(1)['answers']['Q06_note'],'Тестовое пояснение')
-        self.bot.back(1,self.store.load(1))
+        self.bot.start(1); self.assertEqual(self.store.load(1)['note_for'],'Q06')
+        self.bot.answer(1,self.store.load(1),'Тестовое пояснение')
+        state=self.store.load(1)
+        self.assertEqual(state['answers']['Q06_note'],'Тестовое пояснение')
+        self.assertEqual(self.bot.current(state),'Q07')
+        self.bot.back(1,state)
         self.assertEqual(self.bot.current(self.store.load(1)),'Q06')
         self.assertNotIn('Q06_note',self.store.load(1)['answers'])
+
+    def test_cancel_note_preserves_next_selection_and_saved_note(self):
+        s=self.at_question('Q06'); self.callback(s,'c1'); s=self.store.load(1)
+        self.callback(s,'c1'); s=self.store.load(1)  # select in next multi question
+        s['answers']['Q06_note']='Сохранённое'; self.store.save(1,s)
+        self.callback(s,'prevnote'); s=self.store.load(1)
+        self.callback(s,'cancelnote'); s=self.store.load(1)
+        self.assertEqual(s['selected'],['c1'])
+        self.assertEqual(s['answers']['Q06_note'],'Сохранённое')
+        self.assertEqual(self.bot.current(s),'Q07')
+
+    def test_question_option_cannot_be_recorded_as_note(self):
+        s=self.at_question('Q06'); self.callback(s,'c1'); s=self.store.load(1)
+        self.callback(s,'prevnote'); s=self.store.load(1); self.callback(s,'c2')
+        self.assertEqual(self.store.load(1)['note_for'],'Q06')
+        self.assertNotIn('Q06_note',self.store.load(1)['answers'])
+
+    def test_screenout_note_can_resume_and_edit_answer(self):
+        self.bot.start(1); s=self.store.load(1); s['started']=True
+        self.bot.answer(1,s,'c4'); s=self.store.load(1)
+        self.callback(s,'prevnote'); s=self.store.load(1)
+        self.assertEqual(s['note_for'],'S03')
+        self.bot.start(1); self.assertEqual(self.store.load(1)['note_for'],'S03')
+        self.callback(self.store.load(1),'back'); s=self.store.load(1)
+        self.assertFalse(s['complete']); self.assertEqual(self.bot.current(s),'S03')
+        self.callback(s,'c1'); self.assertEqual(self.bot.current(self.store.load(1)),'S04')
+
+    def test_legacy_pre_toggle_does_not_force_note_screen(self):
+        s=self.at_question('Q06'); s['want_note']='Q06'; self.store.save(1,s)
+        self.callback(s,'c1'); s=self.store.load(1)
+        self.assertNotIn('want_note',s); self.assertNotIn('note_for',s)
+        self.assertEqual(self.bot.current(s),'Q07')
 
     def test_simulated_full_route_and_separate_contact(self):
         self.bot.start(1); s=self.store.load(1); s['started']=True; self.store.save(1,s)
@@ -194,9 +246,6 @@ class SurveyTests(unittest.TestCase):
         self.assertEqual(self.store.offset(),51)
 
 
-if __name__=='__main__': unittest.main()
-
-
 class TelegramTransportTests(unittest.TestCase):
     def test_server_closed_connection_is_recreated(self):
         with patch('bot.http.client.HTTPSConnection') as factory:
@@ -241,3 +290,6 @@ class TelegramTransportTests(unittest.TestCase):
             self.assertEqual(connection.request.call_count,1)
             connection.close.assert_called_once()
             self.assertIsNone(api.connection)
+
+
+if __name__=='__main__': unittest.main()

@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 from engine import Engine
+from presentation import caption, needs_details
 from storage import Store
 
 
@@ -67,6 +68,7 @@ class SurveyBot:
     def start(self,chat,channel='direct'):
         s=self.store.load(chat)
         if s:
+            if s.get('note_for'): return self.render(chat,s)
             if s.get('complete'):
                 return self.send(chat,'Спасибо, ваши ответы уже сохранены. /delete удаляет анкету и контакт. Для новой анкеты сначала удалите текущую.')
             return self.render(chat,s)
@@ -79,6 +81,10 @@ class SurveyBot:
     def current(self,s):
         route=self.engine.route(s['answers'],s['mode'],s['participant'])
         return next((q for q in route if q not in s['done']),None)
+
+    def previous_note(self,s):
+        qid=s['done'][-1] if s['done'] else None
+        return qid if qid and self.engine.questions[qid].get('note') else None
 
     def render_message(self,chat,s,key,text,rows):
         """Update buttons in place when toggling a choice; preserve the chat history."""
@@ -101,14 +107,18 @@ class SurveyBot:
             codes=value if isinstance(value,list) else [value]
             labels=[o['label'] for o in self.engine.options(s['note_for'],s['participant']) if o['code'] in codes]
             answer='; '.join(labels) if labels else ('Пропущен' if value is None else str(value))
-            text='Пояснение к ответу\n\n'+q['title']+'\n\nВаш ответ: '+answer+'\n\n'+q['note']+'\n\nНапишите пояснение сообщением (до 500 символов) или нажмите «Пропустить». «Назад» — изменить сам ответ.'
-            rows=[[dict(text='Пропустить',callback_data=s['nonce']+'|skip'),dict(text='Назад',callback_data=s['nonce']+'|back')]]
+            text='Пояснение к ответу\n\n'+q['title']+'\n\nВаш ответ: '+answer+'\n\n'+q['note']+'\n\nНапишите пояснение сообщением (до 500 символов). «К опросу» — продолжить без пояснения.'
+            rows=[[dict(text='К опросу',callback_data=s['nonce']+'|cancelnote'),dict(text='Изменить ответ',callback_data=s['nonce']+'|back')]]
             return self.render_message(chat,s,'note:'+s['note_for'],text,rows)
+        # Migrate an old explanation pre-toggle without touching saved answers.
+        s.pop('want_note',None)
         qid=self.current(s)
         if qid is None:
             s['complete']=True; s['screened_out']=s['answers'].get('S03') not in ('c1','c2')
+            s['nonce']=secrets.token_hex(3)
             self.store.save(chat,s)
-            return self.send(chat,'Спасибо! '+('Для продолжения исследования нужно подтвердить, что вы регулярно участвуете в уходе за собакой.' if s['screened_out'] else 'Ответы сохранены и помогут понять реальные задачи владельцев собак.'))
+            rows=[[dict(text='Пояснить ответ',callback_data=s['nonce']+'|prevnote')]] if self.previous_note(s) else []
+            return self.send(chat,'Спасибо! '+('Для продолжения исследования нужно подтвердить, что вы регулярно участвуете в уходе за собакой.' if s['screened_out'] else 'Ответы сохранены и помогут понять реальные задачи владельцев собак.'),rows)
         q=self.engine.questions[qid]
         s['nonce']=secrets.token_hex(3)
         s.setdefault('selected',[])
@@ -122,25 +132,23 @@ class SurveyBot:
         if q.get('help'): text+='\n\n'+q['help']
         rows=[]
         options=self.engine.options(qid,s['participant'])
-        # Full labels in message, short numbered buttons avoid Telegram truncation.
+        # Meaningful captions, one per row; exact source wording is expandable.
         if options:
             if q['type']=='money': text+='\n\nНапишите сумму в рублях или выберите специальный ответ.'
-            text+='\n\n'+('\n'.join(f'{i+1}. {o["label"]}' for i,o in enumerate(options)))
-            buttons=[]
-            for i,o in enumerate(options):
+            if s.get('show_options')==qid:
+                text+='\n\n'+('\n'.join('• '+o['label'] for o in options))
+            for o in options:
                 selected=o['code'] in s['selected']
-                label=('✓ ' if selected else '')+str(i+1)
-                buttons.append(dict(text=label,callback_data=s['nonce']+'|'+o['code']))
-            rows.extend(buttons[i:i+4] for i in range(0,len(buttons),4))
-            if q['type']=='single': text+='\n\nНажмите номер подходящего ответа.'
+                label=('✓ ' if selected else '')+caption(qid,o)
+                rows.append([dict(text=label,callback_data=s['nonce']+'|'+o['code'])])
         if q['type']=='multi':
-            text+='\n\n'+('Выберите номера до трёх ответов' if q.get('max_choices') else 'Выберите номера одного или нескольких ответов')+' и нажмите «Готово». ✓ — выбранный ответ; повторное нажатие снимает выбор.'
+            text+='\n\n'+('Выберите до трёх ответов' if q.get('max_choices') else 'Можно выбрать несколько ответов')+', затем нажмите «Готово».'
             rows.append([dict(text='Готово',callback_data=s['nonce']+'|done')])
         if q.get('special'): rows.append([dict(text=q['special'],callback_data=s['nonce']+'|unsure')])
-        if q.get('note'):
-            enabled=s.get('want_note')==qid
-            text+='\n\n'+('Пояснение включено. Сначала выберите ответ'+(' и нажмите «Готово»' if q['type']=='multi' else '')+'; затем напишите пояснение отдельным сообщением.' if enabled else 'Хотите пояснить ответ? Нажмите «Добавить пояснение» перед ответом.')
-            rows.append([dict(text='✓ Пояснение включено' if enabled else 'Добавить пояснение',callback_data=s['nonce']+'|note')])
+        if needs_details(qid,options):
+            rows.append([dict(text='Свернуть варианты' if s.get('show_options')==qid else 'Полные варианты',callback_data=s['nonce']+'|details')])
+        if self.previous_note(s):
+            rows.append([dict(text='Пояснить прошлый ответ',callback_data=s['nonce']+'|prevnote')])
         if q['type']=='text': text+=f'\n\nМожно написать ответ или пропустить. До {q.get("max_length",500)} символов.'
         rows.append([dict(text='Пропустить',callback_data=s['nonce']+'|skip'),dict(text='Назад',callback_data=s['nonce']+'|back')])
         return self.render_message(chat,s,qid,text,rows)
@@ -160,11 +168,12 @@ class SurveyBot:
         if qid=='Q32' and value!='c1': self.store.remove_contact(s['participant'])
         s['done'].append(qid); s['selected']=[]
         s['answers']=self.engine.prune(s['answers'],s['mode'])
-        if s.pop('want_note',None)==qid: s['note_for']=qid
+        s.pop('want_note',None); s.pop('show_options',None)
         self.store.save(chat,s)
         return self.render(chat,s)
 
     def back(self,chat,s):
+        s['complete']=False; s['screened_out']=False
         s.pop('note_for',None); s.pop('want_note',None); s['selected']=[]
         if s['done']:
             qid=s['done'].pop()
@@ -188,17 +197,27 @@ class SurveyBot:
             action=cb.get('data','')
             if action=='begin' and not s.get('started'):
                 s['started']=True; self.store.save(chat,s); return self.render(chat,s)
-            if s.get('complete'): return
             nonce,sep,action=action.partition('|')
             if not sep or nonce!=s['nonce']: return self.send(chat,'Этот вопрос уже изменился. Отвечайте на последнее сообщение или нажмите /start.')
+            if action=='prevnote' and not s.get('note_for'):
+                qid=self.previous_note(s)
+                if not qid: return
+                s['note_for']=qid; self.store.save(chat,s); return self.render(chat,s)
+            if s.get('note_for'):
+                if action=='back': return self.back(chat,s)
+                if action=='skip': return self.answer(chat,s,None)
+                if action=='cancelnote':
+                    s.pop('note_for'); self.store.save(chat,s); return self.render(chat,s)
+                return self.send(chat,'Сейчас можно написать пояснение сообщением или нажать «К опросу».')
+            if s.get('complete'): return
             if action=='back': return self.back(chat,s)
             if action=='skip': return self.answer(chat,s,None)
             qid=self.current(s); q=self.engine.questions[qid]
-            if action=='note':
-                if not q.get('note'): return
-                if s.get('want_note')==qid: s.pop('want_note')
-                else: s['want_note']=qid
+            if action=='details':
+                if s.get('show_options')==qid: s.pop('show_options')
+                else: s['show_options']=qid
                 return self.render(chat,s)
+            if action=='note': return self.render(chat,s)  # Refresh legacy buttons.
             if action=='unsure': return self.answer(chat,s,q.get('special'))
             if q['type']=='multi':
                 selected=s['selected']
@@ -222,10 +241,11 @@ class SurveyBot:
             self.store.delete(chat); return self.send(chat,'Анкета и контакт удалены из локального хранилища Whoof. Для новой анкеты — /start.')
         if text=='/help': return self.send(chat,'/start — начать или продолжить\n/back — предыдущий ответ\n/skip — пропустить\n/note текст — пояснение к предыдущему ответу\n/delete — удалить анкету и контакт')
         if not s: return self.start(chat)
-        if s.get('complete'): return self.send(chat,'Ответы уже сохранены. /delete — удалить данные.')
+        if s.get('complete') and not s.get('note_for'): return self.send(chat,'Ответы уже сохранены. /delete — удалить данные.')
         if text=='/back': return self.back(chat,s)
         if text=='/skip': return self.answer(chat,s,None)
         if text.startswith('/note '):
+            if s.get('note_for'): return self.answer(chat,s,text[6:])
             qid=s['done'][-1] if s['done'] else None
             if not qid or not self.engine.questions[qid].get('note'): return self.send(chat,'У предыдущего вопроса нет отдельного пояснения.')
             s['answers'][qid+'_note']=self.engine.validate(qid+'_note',text[6:]); self.store.save(chat,s)

@@ -6,7 +6,7 @@ Python3.10+ with SQLite/SSL and systemd are required. Runtime uses only the Pyth
 
 ## Files on the server
 
-- `/opt/whoof-survey/`: bot.py,engine.py,storage.py,instrument.json, root-owned code.
+- `/opt/whoof-survey/`: bot.py,engine.py,storage.py,presentation.py,instrument.json, root-owned code.
 - `/etc/whoof-survey.env`: TELEGRAM_BOT_TOKEN and SURVEY_MODE=core, root0600; systemd reads it.
 - `/var/lib/whoof-survey/`: responses.sqlite,contacts.sqlite,poller.lock; service user only, directory0700, databases0600.
 - `/etc/systemd/system/whoof-survey.service`: one polling service, auto-start/auto-restart. No public HTTP port needed.
@@ -27,4 +27,4 @@ Export contains completed responses without Telegram chat IDs or contacts. Conta
 
 State mutations and Telegram update cursor are committed together; retried delivery cannot apply the same answer twice. A failure after committing an answer can leave the next message undelivered; `/start` resumes from the saved question. Telegram message delivery itself is not exactly-once. A file lock prevents two pollers sharing one data directory. Do not run another polling instance with a separate directory and the same token.
 
-Verification before participant invitation: service active, restart retains state, `/start` and buttons work in Telegram, one eligible core path completes, invalid amounts/notes are rejected, consent/contact separation and deletion work. All27 tests pass on the VPS. State directory700, databases600 and root secret600 verified; manual restart retains SQLite files. Organizer confirmed the live introduction; full participant path remains pending. UX update installed from runtime124b051; service active/enabled and Telegram readiness verified after restart. Resume with /start to refresh old question buttons after deployment.
+Verification before participant invitation: service active, restart retains state, `/start` and buttons work in Telegram, one eligible core path completes, invalid amounts/notes are rejected, consent/contact separation and deletion work. Readable chat update passes33 local tests; VPS installation pending. Existing saved progress/env must be preserved. Resume with /start to refresh the current question after deployment. Complete live participant path remains pending.

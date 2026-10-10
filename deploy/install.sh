@@ -12,7 +12,7 @@ chown root:root /etc/whoof-survey.env
 chmod 600 /etc/whoof-survey.env
 
 package_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-for runtime_file in bot.py engine.py storage.py instrument.json; do
+for runtime_file in bot.py engine.py storage.py presentation.py instrument.json; do
     [ -f "$package_dir/$runtime_file" ]
 done
 if ! getent passwd whoof-survey >/dev/null; then
@@ -23,7 +23,7 @@ if systemctl is-active --quiet whoof-survey.service; then
     systemctl stop whoof-survey.service
 fi
 install -d -o root -g root -m 755 /opt/whoof-survey
-for runtime_file in bot.py engine.py storage.py instrument.json; do
+for runtime_file in bot.py engine.py storage.py presentation.py instrument.json; do
     install -o root -g root -m 644 "$package_dir/$runtime_file" "/opt/whoof-survey/$runtime_file"
 done
 install -d -o whoof-survey -g whoof-survey -m 700 /var/lib/whoof-survey
