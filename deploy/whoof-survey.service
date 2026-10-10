@@ -1,0 +1,35 @@
+[Unit]
+Description=Whoof quantitative Telegram survey
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=whoof-survey
+Group=whoof-survey
+WorkingDirectory=/opt/whoof-survey
+EnvironmentFile=/etc/whoof-survey.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/whoof-survey/bot.py --data /var/lib/whoof-survey
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=10
+UMask=0077
+StateDirectory=whoof-survey
+StateDirectoryMode=0700
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/whoof-survey
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
