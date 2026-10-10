@@ -1,12 +1,11 @@
 """Whoof quantitative Telegram bot, using persistent polling state."""
 import argparse
 import fcntl
+import http.client
 import json
 import os
 import secrets
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 from engine import Engine
@@ -14,19 +13,34 @@ from storage import Store
 
 
 class Telegram:
-    def __init__(self,token): self.base='https://api.telegram.org/bot'+token+'/'
+    def __init__(self,token):
+        self.path='/bot'+token+'/'
+        self.connection=None
+
+    def close(self):
+        if self.connection:
+            self.connection.close(); self.connection=None
 
     def call(self,method,**args):
-        request=urllib.request.Request(self.base+method,data=json.dumps(args).encode(),headers={'Content-Type':'application/json'})
         try:
-            with urllib.request.urlopen(request,timeout=65) as response: result=json.load(response)
-        except urllib.error.HTTPError as error:
-            try: detail=json.loads(error.read()); retry=detail.get('parameters',{}).get('retry_after')
-            except (ValueError,AttributeError): retry=None
-            if retry: time.sleep(min(retry,30))
-            raise RuntimeError(f'Telegram request failed ({error.code}); retry safely') from None
-        except (urllib.error.URLError,TimeoutError):
+            if self.connection is None:
+                self.connection=http.client.HTTPSConnection('api.telegram.org',timeout=65)
+            self.connection.request('POST',self.path+method,body=json.dumps(args).encode(),
+                                    headers={'Content-Type':'application/json'})
+            response=self.connection.getresponse()
+            status=response.status
+            # Fully consume the response before reusing the TLS connection.
+            body=response.read()
+            if response.will_close: self.close()
+            result=json.loads(body)
+        except (OSError,http.client.HTTPException,ValueError):
+            self.close()
+            # Do not repeat a send: Telegram may already have delivered it.
             raise RuntimeError('Telegram connection unavailable') from None
+        if status>=400:
+            retry=result.get('parameters',{}).get('retry_after')
+            if retry: time.sleep(min(retry,30))
+            raise RuntimeError(f'Telegram request failed ({status}); retry safely') from None
         if not result.get('ok'): raise RuntimeError('Telegram rejected request')
         return result['result']
 
@@ -83,7 +97,13 @@ class SurveyBot:
         if s.get('note_for'):
             q=self.engine.questions[s['note_for']]
             s['nonce']=secrets.token_hex(3); self.store.save(chat,s)
-            return self.render_message(chat,s,'note:'+s['note_for'],q['note']+'\nНеобязательно, до 500 символов.',[[dict(text='Пропустить пояснение',callback_data=s['nonce']+'|skip')]])
+            value=s['answers'].get(s['note_for'])
+            codes=value if isinstance(value,list) else [value]
+            labels=[o['label'] for o in self.engine.options(s['note_for'],s['participant']) if o['code'] in codes]
+            answer='; '.join(labels) if labels else ('Пропущен' if value is None else str(value))
+            text='Пояснение к ответу\n\n'+q['title']+'\n\nВаш ответ: '+answer+'\n\n'+q['note']+'\n\nНапишите пояснение сообщением (до 500 символов) или нажмите «Пропустить». «Назад» — изменить сам ответ.'
+            rows=[[dict(text='Пропустить',callback_data=s['nonce']+'|skip'),dict(text='Назад',callback_data=s['nonce']+'|back')]]
+            return self.render_message(chat,s,'note:'+s['note_for'],text,rows)
         qid=self.current(s)
         if qid is None:
             s['complete']=True; s['screened_out']=s['answers'].get('S03') not in ('c1','c2')
@@ -105,25 +125,30 @@ class SurveyBot:
         # Full labels in message, short numbered buttons avoid Telegram truncation.
         if options:
             if q['type']=='money': text+='\n\nНапишите сумму в рублях или выберите специальный ответ.'
-            else:
-                text+='\n\n'+('\n'.join(f'{i+1}. {o["label"]}' for i,o in enumerate(options)))
+            text+='\n\n'+('\n'.join(f'{i+1}. {o["label"]}' for i,o in enumerate(options)))
+            buttons=[]
             for i,o in enumerate(options):
                 selected=o['code'] in s['selected']
-                label=('✓ ' if selected else '')+f'{i+1}. '+o['label']
-                rows.append([dict(text=label[:60],callback_data=s['nonce']+'|'+o['code'])])
+                label=('✓ ' if selected else '')+str(i+1)
+                buttons.append(dict(text=label,callback_data=s['nonce']+'|'+o['code']))
+            rows.extend(buttons[i:i+4] for i in range(0,len(buttons),4))
+            if q['type']=='single': text+='\n\nНажмите номер подходящего ответа.'
         if q['type']=='multi':
-            text+='\n\n'+('Выберите до трёх ответов.' if q.get('max_choices') else 'Можно выбрать несколько ответов.')
+            text+='\n\n'+('Выберите номера до трёх ответов' if q.get('max_choices') else 'Выберите номера одного или нескольких ответов')+' и нажмите «Готово». ✓ — выбранный ответ; повторное нажатие снимает выбор.'
             rows.append([dict(text='Готово',callback_data=s['nonce']+'|done')])
         if q.get('special'): rows.append([dict(text=q['special'],callback_data=s['nonce']+'|unsure')])
         if q.get('note'):
-            rows.append([dict(text='Ответить с пояснением'+(' ✓' if s.get('want_note')==qid else ''),callback_data=s['nonce']+'|note')])
+            enabled=s.get('want_note')==qid
+            text+='\n\n'+('Пояснение включено. Сначала выберите ответ'+(' и нажмите «Готово»' if q['type']=='multi' else '')+'; затем напишите пояснение отдельным сообщением.' if enabled else 'Хотите пояснить ответ? Нажмите «Добавить пояснение» перед ответом.')
+            rows.append([dict(text='✓ Пояснение включено' if enabled else 'Добавить пояснение',callback_data=s['nonce']+'|note')])
         if q['type']=='text': text+=f'\n\nМожно написать ответ или пропустить. До {q.get("max_length",500)} символов.'
         rows.append([dict(text='Пропустить',callback_data=s['nonce']+'|skip'),dict(text='Назад',callback_data=s['nonce']+'|back')])
         return self.render_message(chat,s,qid,text,rows)
 
     def answer(self,chat,s,value):
         if s.get('note_for'):
-            qid=s.pop('note_for'); s['answers'][qid+'_note']=self.engine.validate(qid+'_note',value)
+            qid=s['note_for']; value=self.engine.validate(qid+'_note',value)
+            s.pop('note_for'); s['answers'][qid+'_note']=value
             self.store.save(chat,s); return self.render(chat,s)
         qid=self.current(s)
         if qid is None: return self.render(chat,s)
@@ -169,7 +194,11 @@ class SurveyBot:
             if action=='back': return self.back(chat,s)
             if action=='skip': return self.answer(chat,s,None)
             qid=self.current(s); q=self.engine.questions[qid]
-            if action=='note': s['want_note']=qid; return self.render(chat,s)
+            if action=='note':
+                if not q.get('note'): return
+                if s.get('want_note')==qid: s.pop('want_note')
+                else: s['want_note']=qid
+                return self.render(chat,s)
             if action=='unsure': return self.answer(chat,s,q.get('special'))
             if q['type']=='multi':
                 selected=s['selected']

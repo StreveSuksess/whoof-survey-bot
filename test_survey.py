@@ -1,10 +1,11 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from engine import Engine
 from storage import Store
-from bot import SurveyBot
+from bot import SurveyBot, Telegram
 
 
 class FakeTelegram:
@@ -15,7 +16,7 @@ class FakeTelegram:
 class SurveyTests(unittest.TestCase):
     def setUp(self):
         self.e=Engine(); self.tmp=tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
-        self.store=Store(self.tmp.name); self.api=FakeTelegram(); self.bot=SurveyBot(self.api,self.store)
+        self.store=Store(self.tmp.name); self.addCleanup(self.store.db.close); self.addCleanup(self.store.contacts.close); self.api=FakeTelegram(); self.bot=SurveyBot(self.api,self.store)
     def test_source_ids_and_notes(self):
         qs=self.e.instrument['questions']; self.assertEqual(len(qs),38)
         self.assertEqual(sum('note' in q for q in qs),17)
@@ -78,6 +79,58 @@ class SurveyTests(unittest.TestCase):
         self.bot.render(1,s); s=self.store.load(1)
         self.bot.handle({'callback_query':{'id':'toggle','data':s['nonce']+'|c1','message':{'chat':{'id':1,'type':'private'}}}})
         self.assertEqual(self.api.calls[-1][0],'editMessageText')
+
+    def at_question(self,qid):
+        self.bot.start(1); s=self.store.load(1); s['started']=True
+        s['answers']={'S03':'c1','Q08':'c2','Q09':'c1'}
+        route=self.e.route(s['answers'],seed=s['participant'])
+        s['done']=route[:route.index(qid)]; self.store.save(1,s)
+        self.bot.render(1,s)
+        return self.store.load(1)
+
+    def callback(self,s,action):
+        self.bot.handle({'callback_query':{'id':'test','data':s['nonce']+'|'+action,
+                        'message':{'chat':{'id':1,'type':'private'}}}})
+
+    def test_number_buttons_match_full_shuffled_options(self):
+        s=self.at_question('Q07'); args=self.api.calls[-1][1]
+        options=self.e.options('Q07',s['participant'])
+        buttons=[b for row in args['reply_markup']['inline_keyboard'] for b in row
+                 if b['callback_data'].split('|')[-1] in {o['code'] for o in options}]
+        self.assertEqual([b['text'] for b in buttons],[str(i+1) for i in range(len(options))])
+        self.assertEqual([b['callback_data'].split('|')[-1] for b in buttons],[o['code'] for o in options])
+        for i,o in enumerate(options): self.assertIn(f'{i+1}. {o["label"]}',args['text'])
+        self.callback(s,options[0]['code'])
+        self.assertIn('✓ 1',[b['text'] for row in self.api.calls[-1][1]['reply_markup']['inline_keyboard'] for b in row])
+
+    def test_money_specials_have_full_numbered_text(self):
+        s=self.at_question('Q14'); text=self.api.calls[-1][1]['text']
+        for i,o in enumerate(self.e.options('Q14',s['participant'])):
+            self.assertIn(f'{i+1}. {o["label"]}',text)
+        self.callback(s,'unknown')
+        self.assertEqual(self.store.load(1)['answers']['Q14'],'unknown')
+
+    def test_note_toggle_context_validation_and_back(self):
+        s=self.at_question('Q06'); self.callback(s,'note'); s=self.store.load(1)
+        self.assertEqual(self.api.calls[-1][0],'editMessageText')
+        self.assertIn('Сначала выберите',self.api.calls[-1][1]['text'])
+        self.callback(s,'note'); s=self.store.load(1)
+        self.assertNotIn('want_note',s)
+        self.callback(s,'note'); s=self.store.load(1)
+        code=self.e.options('Q06',s['participant'])[0]['code']
+        self.callback(s,code); s=self.store.load(1)
+        args=self.api.calls[-1][1]
+        self.assertIn(self.e.questions['Q06']['title'],args['text'])
+        self.assertIn(next(o['label'] for o in self.e.questions['Q06']['options'] if o['code']==code),args['text'])
+        self.assertIn('Напишите пояснение сообщением',args['text'])
+        with self.assertRaises(ValueError): self.bot.answer(1,s,'x'*501)
+        self.assertEqual(s['note_for'],'Q06')
+        self.bot.answer(1,s,'Тестовое пояснение')
+        self.assertEqual(self.store.load(1)['answers']['Q06_note'],'Тестовое пояснение')
+        self.bot.back(1,self.store.load(1))
+        self.assertEqual(self.bot.current(self.store.load(1)),'Q06')
+        self.assertNotIn('Q06_note',self.store.load(1)['answers'])
+
     def test_simulated_full_route_and_separate_contact(self):
         self.bot.start(1); s=self.store.load(1); s['started']=True; self.store.save(1,s)
         while not self.store.load(1)['complete']:
@@ -142,3 +195,49 @@ class SurveyTests(unittest.TestCase):
 
 
 if __name__=='__main__': unittest.main()
+
+
+class TelegramTransportTests(unittest.TestCase):
+    def test_server_closed_connection_is_recreated(self):
+        with patch('bot.http.client.HTTPSConnection') as factory:
+            response=factory.return_value.getresponse.return_value
+            response.status=200; response.will_close=True
+            response.read.return_value=b'{"ok":true,"result":true}'
+            api=Telegram('test-secret')
+            api.call('getMe'); api.call('getMe')
+            self.assertEqual(factory.call_count,2)
+            self.assertIsNone(api.connection)
+
+    def test_rate_limit_is_reported_without_resending(self):
+        with patch('bot.http.client.HTTPSConnection') as factory, patch('bot.time.sleep') as sleep:
+            response=factory.return_value.getresponse.return_value
+            response.status=429; response.will_close=False
+            response.read.return_value=b'{"ok":false,"parameters":{"retry_after":5}}'
+            api=Telegram('test-secret')
+            with self.assertRaisesRegex(RuntimeError,'429'): api.call('sendMessage',chat_id=1,text='Test')
+            sleep.assert_called_once_with(5)
+            self.assertEqual(factory.return_value.request.call_count,1)
+
+    def test_serial_calls_reuse_https_connection(self):
+        with patch('bot.http.client.HTTPSConnection') as factory:
+            connection=factory.return_value; response=connection.getresponse.return_value
+            response.status=200; response.will_close=False
+            response.read.return_value=b'{"ok":true,"result":{"message_id":1}}'
+            api=Telegram('test-secret')
+            api.call('answerCallbackQuery',callback_query_id='cb')
+            api.call('sendMessage',chat_id=1,text='Test')
+            self.assertEqual(factory.call_count,1)
+            self.assertEqual(connection.request.call_count,2)
+            self.assertEqual(response.read.call_count,2)
+            self.assertEqual(factory.call_args.args,('api.telegram.org',))
+
+    def test_failed_send_is_not_retried_and_error_hides_secret(self):
+        with patch('bot.http.client.HTTPSConnection') as factory:
+            connection=factory.return_value
+            connection.getresponse.side_effect=OSError('test-secret')
+            api=Telegram('test-secret')
+            with self.assertRaises(RuntimeError) as error: api.call('sendMessage',chat_id=1,text='Test')
+            self.assertNotIn('test-secret',str(error.exception))
+            self.assertEqual(connection.request.call_count,1)
+            connection.close.assert_called_once()
+            self.assertIsNone(api.connection)
