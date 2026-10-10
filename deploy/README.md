@@ -1,6 +1,6 @@
 # Telegram hosting
 
-Target: existing Play2Go VPS#128980,31.76.24.157. Bot [@whoofserveybot](https://t.me/whoofserveybot), verified through getMe. No active webhook. Deployment is prepared but not yet performed: existing SSH key is rejected and VMmanager requires login.
+Bot [@whoofserveybot](https://t.me/whoofserveybot), verified through getMe. No active webhook. Runtime publication is ready; live server installation is pending.
 
 Python3.10+ with SQLite/SSL and systemd are required. Runtime uses only the Python standard library. The script does not install packages, reinstall the OS, change network settings or reboot the server.
 
@@ -23,8 +23,8 @@ sudo systemctl stop whoof-survey
 sudo -u whoof-survey /usr/bin/python3 /opt/whoof-survey/bot.py --data /var/lib/whoof-survey --export /var/lib/whoof-survey/exports/responses.json
 ```
 
-Export contains completed responses without Telegram chat IDs or contacts. Contacts are stored in their separate SQLite database. Backups/exports need the same access and retention rules as the originals. Built-in purge removes records after365 inactive days. Host paid through2026-11-06 with auto-renew off (observed2026-10-10); service stops if hosting expires.
+Export contains completed responses without Telegram chat IDs or contacts. Contacts are stored in their separate SQLite database. Backups/exports need the same access and retention rules as the originals. Built-in purge removes records after365 inactive days. 
 
 State mutations and Telegram update cursor are committed together; retried delivery cannot apply the same answer twice. A failure after committing an answer can leave the next message undelivered; `/start` resumes from the saved question. Telegram message delivery itself is not exactly-once. A file lock prevents two pollers sharing one data directory. Do not run another polling instance with a separate directory and the same token.
 
-Verification before participant invitation: service active, restart retains state, `/start` and buttons work in Telegram, one eligible core path completes, invalid amounts/notes are rejected, consent/contact separation and deletion work. Live participant interaction remains untested until server access is provided.
+Verification before participant invitation: service active, restart retains state, `/start` and buttons work in Telegram, one eligible core path completes, invalid amounts/notes are rejected, consent/contact separation and deletion work. Live participant interaction remains untested until installation is verified.
