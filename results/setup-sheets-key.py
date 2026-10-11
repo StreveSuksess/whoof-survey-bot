@@ -2,6 +2,7 @@
 import base64
 import argparse
 import getpass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,7 @@ if os.geteuid()!=0:
 parser=argparse.ArgumentParser()
 parser.add_argument('--answers-id',required=True)
 parser.add_argument('--contacts-id',required=True)
+parser.add_argument('--chunks',type=int,default=0,help='Hidden checksum-prefixed chunks for unreliable VNC input')
 args=parser.parse_args()
 import re
 if (not all(re.fullmatch(r'[A-Za-z0-9_-]{20,100}',v) for v in (args.answers_id,args.contacts_id))
@@ -20,7 +22,23 @@ directory=Path('/etc/whoof-sheets-sync')
 key=directory/'google-key.json'
 if key.exists():
     raise SystemExit('Credential already exists; refusing to overwrite')
-encoded=getpass.getpass('Google key JSON, base64 (hidden): ')
+if not 0<=args.chunks<=100:
+    raise SystemExit('Invalid chunk count')
+if args.chunks:
+    parts=[]
+    for index in range(args.chunks):
+        while True:
+            line=getpass.getpass(f'Chunk {index+1}/{args.chunks}, checksum:base64 (hidden): ')
+            digest,separator,part=line.partition(':')
+            if (separator and part and len(part)<=2000 and re.fullmatch(r'[0-9a-f]{64}',digest)
+                and hashlib.sha256(part.encode()).hexdigest()==digest):
+                parts.append(part)
+                print(f'Chunk {index+1}/{args.chunks} verified')
+                break
+            print('Chunk rejected; retry same chunk (no values printed)')
+    encoded=''.join(parts)
+else:
+    encoded=getpass.getpass('Google key JSON, base64 (hidden): ')
 try:
     data=base64.b64decode(encoded,validate=True)
     parsed=json.loads(data)
