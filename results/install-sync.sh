@@ -14,6 +14,8 @@ chown root:whoof-survey /etc/whoof-sheets-sync/google-key.json
 chmod 640 /etc/whoof-sheets-sync/google-key.json
 /usr/bin/python3 -m venv /opt/whoof-survey/results/venv
 /opt/whoof-survey/results/venv/bin/pip install --disable-pip-version-check -r "$package_dir/requirements.txt"
+chown -R root:whoof-survey /opt/whoof-survey/results/venv
+chmod -R g+rX /opt/whoof-survey/results/venv
 chown root:root /etc/whoof-sheets-sync.env
 chmod 600 /etc/whoof-sheets-sync.env
 for unit in whoof-sheets-sync.service whoof-sheets-sync.timer; do
