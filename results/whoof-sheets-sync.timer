@@ -1,0 +1,10 @@
+[Unit]
+Description=Sync Whoof survey results every minute
+
+[Timer]
+OnBootSec=60
+OnUnitInactiveSec=60
+Unit=whoof-sheets-sync.service
+
+[Install]
+WantedBy=timers.target

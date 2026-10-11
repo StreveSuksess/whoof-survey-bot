@@ -1,0 +1,1637 @@
+{
+  "version": "whoof-quant-2026-10-10-v1",
+  "fields": [
+    {
+      "id": "S03",
+      "title": "Есть ли сейчас в вашем домохозяйстве собака, в уходе за которой вы участвуете хотя бы раз в неделю?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Да, я основной ухаживающий.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Да, я участвую вместе с другими людьми.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Собака есть, но я практически не участвую в уходе",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Собаки сейчас нет",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        }
+      ]
+    },
+    {
+      "id": "S03_note",
+      "title": "Пояснение: Есть ли сейчас в вашем домохозяйстве собака, в уходе за которой вы участвуете хотя бы раз в неделю?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "S04",
+      "title": "Сколько собак сейчас в вашем домохозяйстве?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Одна.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Две.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Три или больше.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        }
+      ]
+    },
+    {
+      "id": "S04_note",
+      "title": "Пояснение: Сколько собак сейчас в вашем домохозяйстве?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q01",
+      "title": "Сколько лет выбранной собаке?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Меньше одного года.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "От одного до трёх лет включительно.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "От четырёх до семи лет включительно.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "От восьми до десяти лет включительно.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Одиннадцать лет или больше.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Не знаю.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q01_note",
+      "title": "Пояснение: Сколько лет выбранной собаке?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q02",
+      "title": "Каков её приблизительный вес?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Меньше 5 кг.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "От 5 до менее 10 кг.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "От 10 до менее 25 кг.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "25 кг и больше.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Не знаю.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q02_note",
+      "title": "Пояснение: Каков её приблизительный вес?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q03",
+      "title": "Как давно эта собака живёт в вашем домохозяйстве?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Меньше трёх месяцев.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "От трёх до менее двенадцати месяцев.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Один год или дольше.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q03_note",
+      "title": "Пояснение: Как давно эта собака живёт в вашем домохозяйстве?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q04",
+      "title": "За последние 12 месяцев ветеринар рекомендовал регулярно наблюдать за состоянием этой собаки дома?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Да, сейчас такая рекомендация действует.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Да, но сейчас необходимость такого наблюдения закончилась.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Нет.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "За этот период к ветеринару не обращались.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Не знаю / не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q04_note",
+      "title": "Пояснение: За последние 12 месяцев ветеринар рекомендовал регулярно наблюдать за состоянием этой собаки дома?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q05",
+      "title": "Как вы участвовали в последней платной покупке или выборе платной услуги для этой собаки?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Решение принимал и расходы оплачивал преимущественно я.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Я принимал решение, оплачивал преимущественно другой человек.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Я преимущественно оплачивал, решение принимал другой человек.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Решение и/или оплату делили с другими людьми.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "В решении и оплате не участвовал.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Платных покупок или услуг для неё ещё не было.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c7",
+          "label": "Другое",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c8",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q05_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q06",
+      "title": "За последние семь дней в течение скольких дней собака оставалась без людей дома хотя бы на два часа подряд?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Ни одного дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Один-два дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Три-четыре дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Пять-семь дней.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Не знаю.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q06_note",
+      "title": "Пояснение: За последние семь дней в течение скольких дней собака оставалась без людей дома хотя бы на два часа подряд?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q07",
+      "title": "За последние 30 дней в каких вопросах ухода за этой собакой вы сталкивались с затруднениями?",
+      "type": "multi",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Организация прогулок.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Кормление и подбор питания.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Поведение и обучение.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Уход и гигиена.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Понимание её состояния и решение, нужна ли помощь.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Уход в моё отсутствие.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c7",
+          "label": "Расходы на содержание.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c8",
+          "label": "Другое",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c9",
+          "label": "Затруднений не было.",
+          "other": false,
+          "exclusive": true,
+          "pinned": true
+        },
+        {
+          "code": "c10",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": true,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q07_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q08",
+      "title": "За последние 90 дней сколько было отдельных случаев, когда вы не понимали, всё ли с этой собакой в порядке? Например, после изменения её поведения или привычного режима.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Ни одного",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Один.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Два-три.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Четыре-шесть.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Семь или больше.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Не могу вспомнить",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q08_note",
+      "title": "Пояснение: За последние 90 дней сколько было отдельных случаев, когда вы не понимали, всё ли с этой собакой в порядке? Например, после изменения её поведения или привычного режима.",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q09",
+      "title": "Когда начался этот случай?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "В последние семь дней.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "От восьми до тридцати дней назад.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "От тридцати одного до девяноста дней назад.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Случай был в последние 90 дней, точнее не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "После уточнения понял, что он был раньше",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        }
+      ]
+    },
+    {
+      "id": "Q09_note",
+      "title": "Пояснение: Когда начался этот случай?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q10",
+      "title": "Что первым привлекло ваше внимание в том случае?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Сам заметил изменение в собаке.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "О собаке сообщил другой человек.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Посмотрел запись или трансляцию камеры.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Ветеринар сообщил при консультации или осмотре.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Повод был другим",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c6",
+          "label": "Конкретного изменения не было, возникло сомнение о её состоянии.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c7",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q10_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q11",
+      "title": "Что именно вы тогда пытались понять?",
+      "type": "multi",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Является ли замеченное состояние обычным для этой собаки.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Нужно ли обращаться к ветеринару.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Нужно ли менять прогулки или нагрузку.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Нужно ли менять кормление или питьевой режим.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Как собака восстанавливается после лечения или нагрузки.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Что происходило, пока меня не было рядом.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c7",
+          "label": "Другой вопрос",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c8",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": true,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q11_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q12",
+      "title": "Что вы фактически сделали, чтобы разобраться в этом случае?",
+      "type": "multi",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Наблюдал за собакой без специальных записей.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Делал записи, фото или видео.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Посмотрел запись или трансляцию камеры.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Обсудил с близким человеком / другим ухаживающим.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Искал информацию в интернете или сообществе.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Связался с ветеринаром или посетил клинику.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c7",
+          "label": "Изменил прогулки, режим или уход.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c8",
+          "label": "Сделал что-то другое",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c9",
+          "label": "Ничего не предпринимал.",
+          "other": false,
+          "exclusive": true,
+          "pinned": true
+        },
+        {
+          "code": "c10",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": true,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q12_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q13",
+      "title": "Сколько вашего времени суммарно заняли поиск информации, записи и обсуждение этого случая?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Не тратил время на эти действия.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c2",
+          "label": "Меньше 15 минут.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "От 15 до 59 минут.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "От одного до менее трёх часов.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Три часа или больше.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Не могу оценить.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q13_note",
+      "title": "Пояснение: Сколько вашего времени суммарно заняли поиск информации, записи и обсуждение этого случая?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q14",
+      "title": "Сколько денег вы и ваше домохозяйство потратили именно из-за этого случая?",
+      "type": "money",
+      "options": [
+        {
+          "code": "unknown",
+          "label": "Не знаю / не могу оценить."
+        },
+        {
+          "code": "refused",
+          "label": "Не хочу отвечать."
+        }
+      ]
+    },
+    {
+      "id": "Q15",
+      "title": "На момент заполнения анкеты удалось ли понять, что происходило с собакой и что делать?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Да, стало понятно и удалось выбрать действие или решить ничего не менять.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Стало понятнее, но часть вопросов осталась.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Нет, вопрос по-прежнему неясен.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Ситуация ещё развивается, оценить рано.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Другое",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c6",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q15_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q15a",
+      "title": "За последние семь дней в течение скольких дней вы возвращались к вопросу, всё ли с этой собакой в порядке, когда новых изменений в ней не замечали?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Ни одного дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Один-два дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Три-четыре дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Пять-семь дней.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Не могу вспомнить.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q15a_note",
+      "title": "Пояснение: За последние семь дней в течение скольких дней вы возвращались к вопросу, всё ли с этой собакой в порядке, когда новых изменений в ней не замечали?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q15b",
+      "title": "За последние семь дней в течение скольких дней вы повторно проверяли состояние этой собаки в один и тот же день, потому что сомнения сохранялись, хотя новых изменений вы не замечали?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Ни одного дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Один-два дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Три-четыре дня.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Пять-семь дней.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Не могу вспомнить.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q15b_note",
+      "title": "Пояснение: За последние семь дней в течение скольких дней вы повторно проверяли состояние этой собаки в один и тот же день, потому что сомнения сохранялись, хотя новых изменений вы не замечали?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q16",
+      "title": "Как собака носила ошейник или шлейку в последние полные сутки?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Носила и дома, и на прогулках, включая ночной сон.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Носила дома и на прогулках, но на ночной сон снимали.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Носила только на прогулках / вне дома.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "В эти сутки ошейник или шлейку не надевали.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Другой вариант",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c6",
+          "label": "Не знаю.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q16_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q17_1",
+      "title": "Какие из следующих решений вы использовали для этой собаки?\nКамера для наблюдения за собакой.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Использовал хотя бы один раз за последние 30 дней."
+        },
+        {
+          "code": "c2",
+          "label": "Использовал раньше, но за последние 30 дней не использовал."
+        },
+        {
+          "code": "c3",
+          "label": "Никогда не использовал для этой собаки."
+        },
+        {
+          "code": "c4",
+          "label": "Не помню."
+        }
+      ]
+    },
+    {
+      "id": "Q17_2",
+      "title": "Какие из следующих решений вы использовали для этой собаки?\nПриложение/сервис, куда вручную записывали наблюдения о собаке.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Использовал хотя бы один раз за последние 30 дней."
+        },
+        {
+          "code": "c2",
+          "label": "Использовал раньше, но за последние 30 дней не использовал."
+        },
+        {
+          "code": "c3",
+          "label": "Никогда не использовал для этой собаки."
+        },
+        {
+          "code": "c4",
+          "label": "Не помню."
+        }
+      ]
+    },
+    {
+      "id": "Q17_3",
+      "title": "Какие из следующих решений вы использовали для этой собаки?\nБумажные записи или заметки в телефоне.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Использовал хотя бы один раз за последние 30 дней."
+        },
+        {
+          "code": "c2",
+          "label": "Использовал раньше, но за последние 30 дней не использовал."
+        },
+        {
+          "code": "c3",
+          "label": "Никогда не использовал для этой собаки."
+        },
+        {
+          "code": "c4",
+          "label": "Не помню."
+        }
+      ]
+    },
+    {
+      "id": "Q17_4",
+      "title": "Какие из следующих решений вы использовали для этой собаки?\nФото/видео и сообщения от другого ухаживающего.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Использовал хотя бы один раз за последние 30 дней."
+        },
+        {
+          "code": "c2",
+          "label": "Использовал раньше, но за последние 30 дней не использовал."
+        },
+        {
+          "code": "c3",
+          "label": "Никогда не использовал для этой собаки."
+        },
+        {
+          "code": "c4",
+          "label": "Не помню."
+        }
+      ]
+    },
+    {
+      "id": "Q17_5",
+      "title": "Какие из следующих решений вы использовали для этой собаки?\nУстные сообщения другого ухаживающего.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Использовал хотя бы один раз за последние 30 дней."
+        },
+        {
+          "code": "c2",
+          "label": "Использовал раньше, но за последние 30 дней не использовал."
+        },
+        {
+          "code": "c3",
+          "label": "Никогда не использовал для этой собаки."
+        },
+        {
+          "code": "c4",
+          "label": "Не помню."
+        }
+      ]
+    },
+    {
+      "id": "Q17_6",
+      "title": "Какие из следующих решений вы использовали для этой собаки?\nСобственные наблюдения без специальных записей.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Использовал хотя бы один раз за последние 30 дней."
+        },
+        {
+          "code": "c2",
+          "label": "Использовал раньше, но за последние 30 дней не использовал."
+        },
+        {
+          "code": "c3",
+          "label": "Никогда не использовал для этой собаки."
+        },
+        {
+          "code": "c4",
+          "label": "Не помню."
+        }
+      ]
+    },
+    {
+      "id": "Q17_other",
+      "title": "Другое решение — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q17_other_frequency",
+      "title": "Другое решение: как часто вы его использовали? Название можно не указывать; если другого решения нет, вопрос можно пропустить.",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Использовал хотя бы один раз за последние 30 дней."
+        },
+        {
+          "code": "c2",
+          "label": "Использовал раньше, но за последние 30 дней не использовал."
+        },
+        {
+          "code": "c3",
+          "label": "Никогда не использовал для этой собаки."
+        },
+        {
+          "code": "c4",
+          "label": "Не помню."
+        }
+      ]
+    },
+    {
+      "id": "Q23",
+      "title": "Сколько ваше домохозяйство примерно потратило за последние 30 дней на всех своих собак вместе?",
+      "type": "money",
+      "options": [
+        {
+          "code": "unknown",
+          "label": "Не знаю / не могу оценить."
+        },
+        {
+          "code": "refused",
+          "label": "Не хочу отвечать."
+        }
+      ]
+    },
+    {
+      "id": "Q24",
+      "title": "Каким телефоном вы сейчас пользуетесь преимущественно?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Android.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "iPhone.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Другой смартфон",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c4",
+          "label": "Телефоном без приложений / смартфона нет.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Не знаю.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q24_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q25_region",
+      "title": "Регион России",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q25_place",
+      "title": "Тип населённого пункта",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Москва",
+          "other": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Санкт-Петербург",
+          "other": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Другой город с населением от 1 млн",
+          "other": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Город от 100 тыс. до менее 1 млн",
+          "other": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Город меньше 100 тыс.",
+          "other": false,
+          "pinned": false
+        },
+        {
+          "code": "c6",
+          "label": "Посёлок или сельский населённый пункт",
+          "other": false,
+          "pinned": false
+        },
+        {
+          "code": "c7",
+          "label": "Другой вариант",
+          "other": true,
+          "pinned": true
+        },
+        {
+          "code": "c8",
+          "label": "Не знаю",
+          "other": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q25_place_other",
+      "title": "Другой тип населённого пункта — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q26",
+      "title": "Носили ли вы лично фитнес-браслет или умные часы для отслеживания своих показателей?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Носил хотя бы один раз за последние 30 дней",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Носил раньше, но за последние 30 дней не носил",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Устройство есть, но для отслеживания показателей ещё не использовал",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Никогда не использовал",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c5",
+          "label": "Не помню",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q26_note",
+      "title": "Пояснение: Носили ли вы лично фитнес-браслет или умные часы для отслеживания своих показателей?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q26a",
+      "title": "В последний раз, когда вы смотрели свои показатели браслета или часов, что произошло после просмотра?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Изменил действие или принял решение ничего не менять на основе показателей",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Посмотрел показатели, но отдельного решения по ним не принимал.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Другое",
+          "other": true,
+          "exclusive": false,
+          "pinned": true
+        },
+        {
+          "code": "c4",
+          "label": "Не помню, смотрел ли показатели или что делал после этого.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q26a_other",
+      "title": "Другой вариант — укажите (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q26a_action",
+      "title": "Что именно? Одно предложение (необязательно).",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q26a_time",
+      "title": "Когда вы в последний раз смотрели свои показатели? (необязательно)",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Последние 30 дней"
+        },
+        {
+          "code": "c2",
+          "label": "Раньше"
+        },
+        {
+          "code": "c3",
+          "label": "Не помню"
+        }
+      ]
+    },
+    {
+      "id": "Q26b",
+      "title": "За последние 12 месяцев вы прекращали пользоваться личным фитнес-браслетом или умными часами для отслеживания показателей?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Да",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Нет.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q26b_note",
+      "title": "Пояснение: За последние 12 месяцев вы прекращали пользоваться личным фитнес-браслетом или умными часами для отслеживания показателей?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q26b_reason",
+      "title": "Что стало основной причиной последнего такого прекращения?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q27",
+      "title": "До приглашения в этот опрос вы уже слышали о Whoof?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Да, знаком с продуктом / материалами.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Слышал название, подробностей не знал.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Нет.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q27_note",
+      "title": "Пояснение: До приглашения в этот опрос вы уже слышали о Whoof?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q27a",
+      "title": "До приглашения в этот опрос вы оформляли предзаказ Whoof?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Да, оформлял сам или участвовал в оформлении.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Предзаказ оформил другой человек для нашей собаки, я в оформлении не участвовал.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c3",
+          "label": "Нет.",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c4",
+          "label": "Не знаю / не помню.",
+          "other": false,
+          "exclusive": false,
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "id": "Q27a_note",
+      "title": "Пояснение: До приглашения в этот опрос вы оформляли предзаказ Whoof?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q31",
+      "title": "Что ещё вы хотели бы рассказать об уходе за собакой или о ситуациях, которые не вошли в вопросы?",
+      "type": "text",
+      "options": []
+    },
+    {
+      "id": "Q32",
+      "title": "Можно ли связаться с вами и предложить время такого разговора?",
+      "type": "single",
+      "options": [
+        {
+          "code": "c1",
+          "label": "Да, можно связаться со мной",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        },
+        {
+          "code": "c2",
+          "label": "Нет, не хочу оставлять контакт",
+          "other": false,
+          "exclusive": false,
+          "pinned": false
+        }
+      ]
+    }
+  ],
+  "metadata": [
+    "Источник",
+    "ID ответа",
+    "Дата ответа",
+    "Обновлено",
+    "Версия анкеты",
+    "Режим",
+    "Канал приглашения",
+    "Статус",
+    "Тестовая запись",
+    "Замечания к данным"
+  ]
+}
