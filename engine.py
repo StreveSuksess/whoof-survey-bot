@@ -107,6 +107,40 @@ class Engine:
             return value.strip() or None
         return value
 
+    def remaining_bounds(self,answers,done,mode='core',seed=None):
+        """Questions left, including current; notes are not separate steps.
+
+        Unknown branch gates use reachable shortest/longest completions.
+        Existing values (including a skipped None) are never replaced.
+        """
+        done=set(done)
+        if 'S03' not in done:
+            return (1,1)  # Eligibility is a separate, one-question check.
+        gates={
+            'Q08':('c1','c2'), 'Q09':('c5','c1'),
+            'Q26':('c3','c1'), 'Q26a':('c2','c1'), 'Q26b':('c2','c1'),
+            'Q29':('c2','c1'), 'P03':('c2','c1'), 'Q32':('c2','c1'),
+        }
+        counts=[]
+        def in_mode(qid):
+            section=self.questions[qid].get('mode')
+            return not (section=='concept' and mode=='core' or section=='price' and mode!='price')
+        for longest in (False,True):
+            future=copy.deepcopy(answers)
+            for qid,choices in gates.items():
+                if qid not in future and qid not in done and in_mode(qid):
+                    future[qid]=choices[int(longest)]
+            for qid,q in self.questions.items():
+                if qid in future or qid in done or not in_mode(qid): continue
+                options=q.get('options',[])
+                others=[o for o in options if o.get('other')]
+                regular=[o for o in options if not o.get('other')]
+                if others and regular:
+                    code=(others if longest else regular)[0]['code']
+                    future[qid]=[code] if q['type']=='multi' else code
+            counts.append(sum(qid not in done for qid in self.route(future,mode,seed)))
+        return tuple(counts)
+
     def options(self,qid,seed):
         q=self.questions[qid]; options=copy.deepcopy(q.get('options',[]))
         if q.get('shuffle'):

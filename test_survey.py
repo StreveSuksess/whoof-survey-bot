@@ -1,4 +1,6 @@
 import json
+import copy
+import random
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -42,6 +44,64 @@ class SurveyTests(unittest.TestCase):
     def test_contact_route(self):
         for v in ['c2',None]: self.assertNotIn('Q33',self.e.route({'Q32':v}))
         self.assertIn('Q33',self.e.route({'Q32':'c1'}))
+
+    def test_remaining_bounds_contain_real_completions_in_all_modes(self):
+        for mode in ('core','concept','price'):
+            for run in range(25):
+                rng=random.Random(str(run)+mode)
+                answers={'S03':'c1'}; done=['S03']; prefixes=[]
+                while True:
+                    route=self.e.route(answers,mode,'progress-test')
+                    qid=next((q for q in route if q not in done),None)
+                    if qid is None: break
+                    prefixes.append((copy.deepcopy(answers),done[:]))
+                    q=self.e.questions[qid]
+                    if rng.random()<.15: value=None
+                    elif q.get('options'): value=rng.choice(q['options'])['code']
+                    else: value='example' if q['type']=='text' else 0
+                    if q['type']=='multi' and value is not None: value=[value]
+                    answers[qid]=self.e.validate(qid,value); done.append(qid)
+                    answers=self.e.prune(answers,mode)
+                final=self.e.route(answers,mode,'progress-test')
+                last_high=None
+                for known,completed in prefixes:
+                    low,high=self.e.remaining_bounds(known,completed,mode,'progress-test')
+                    actual=sum(q not in completed for q in final)
+                    self.assertLessEqual(low,actual,(mode,run,completed))
+                    self.assertLessEqual(actual,high,(mode,run,completed))
+                    if last_high is not None: self.assertLess(high,last_high)
+                    last_high=high
+                self.assertEqual(self.e.remaining_bounds(answers,done,mode),(0,0))
+
+    def test_remaining_bounds_treat_screening_and_skips_correctly(self):
+        self.assertEqual(self.e.remaining_bounds({},[]),(1,1))
+        self.assertEqual(self.e.remaining_bounds({'S03':None},['S03']),(0,0))
+        answers={'S03':'c1','Q08':None,'Q26':None,'Q32':None}
+        done=self.e.route(answers)
+        self.assertEqual(self.e.remaining_bounds(answers,done),(0,0))
+        self.assertNotIn('Q33',self.e.route(answers))
+
+    def test_progress_header_resumes_and_does_not_change_on_toggle_or_note(self):
+        s=self.at_question('Q07')
+        header=self.bot.progress_header(s)
+        self.assertIn('Осталось',self.api.calls[-1][1]['text'])
+        self.assertIn('включая этот',header)
+        self.callback(s,'c1'); s=self.store.load(1)
+        self.assertEqual(header,self.bot.progress_header(s))
+        self.callback(s,'prevnote'); s=self.store.load(1)
+        self.assertIn('прогресс не меняется',self.api.calls[-1][1]['text'])
+        self.assertEqual(header,self.bot.progress_header(s))
+        self.callback(s,'cancelnote'); self.bot.start(1)
+        self.assertTrue(self.api.calls[-1][1]['text'].startswith(header))
+
+    def test_final_contact_counts_as_one_step_and_back_reopens_it(self):
+        s=self.at_question('Q32'); self.callback(s,'c1'); s=self.store.load(1)
+        self.assertEqual(self.bot.current(s),'Q33')
+        self.assertIn('Осталось 1 вопрос',self.api.calls[-1][1]['text'])
+        self.bot.answer(1,s,'example-contact'); s=self.store.load(1)
+        self.assertIn('Опрос завершён',self.api.calls[-1][1]['text'])
+        self.bot.back(1,s)
+        self.assertIn('Осталось 1 вопрос',self.api.calls[-1][1]['text'])
     def test_multi_constraints(self):
         with self.assertRaises(ValueError): self.e.validate('Q07',['c1','c9'])
         with self.assertRaises(ValueError): self.e.validate('Q30',['c1','c2','c3','c4'])

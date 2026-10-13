@@ -75,7 +75,7 @@ class SurveyBot:
         s=dict(participant=secrets.token_hex(8),version=self.engine.instrument['version'],mode=self.mode,
                channel=channel[:64],answers={},done=[],nonce='',started=False,complete=False,screened_out=False)
         self.store.save(chat,s)
-        text=self.engine.instrument['intro']+'\n\n'+self.engine.instrument['privacy']+'\n\nМожно остановиться и продолжить через /start. /back — предыдущий ответ, /skip — пропустить. /delete — удалить данные. Ориентир полной анкеты — 12–15 минут; время уточним в пробном прохождении.'
+        text=self.engine.instrument['intro']+'\n\n'+self.engine.instrument['privacy']+'\n\nВ каждом вопросе видно, сколько осталось. Число уточняется по вашим ответам; пояснения необязательны.\n\nМожно остановиться и продолжить через /start. /back — предыдущий ответ, /skip — пропустить. /delete — удалить данные. Ориентир полной анкеты — 12–15 минут; время уточним в пробном прохождении.'
         return self.send(chat,text,[[dict(text='Начать опрос',callback_data='begin')]])
 
     def current(self,s):
@@ -85,6 +85,21 @@ class SurveyBot:
     def previous_note(self,s):
         qid=s['done'][-1] if s['done'] else None
         return qid if qid and self.engine.questions[qid].get('note') else None
+
+    def progress_header(self,s):
+        if 'S03' not in s['done']:
+            return 'Проверка участия · один вопрос\n\n'
+        low,high=self.engine.remaining_bounds(s['answers'],s['done'],s['mode'],s['participant'])
+        route=self.engine.route(s['answers'],s['mode'],s['participant'])
+        answered=len(set(s['done']).intersection(route))
+        filled=8*answered//max(1,answered+high)
+        bar='▰'*filled+'▱'*(8-filled)
+        count=str(low) if low==high else f'{low}–{high}'
+        word='вопросов'
+        if low==high:
+            if low%10==1 and low%100!=11: word='вопрос'
+            elif low%10 in (2,3,4) and low%100 not in (12,13,14): word='вопроса'
+        return f'{bar}  Вопрос {answered+1}\nОсталось {count} {word}, включая этот.\n\n'
 
     def render_message(self,chat,s,key,text,rows):
         """Update buttons in place when toggling a choice; preserve the chat history."""
@@ -107,7 +122,7 @@ class SurveyBot:
             codes=value if isinstance(value,list) else [value]
             labels=[o['label'] for o in self.engine.options(s['note_for'],s['participant']) if o['code'] in codes]
             answer='; '.join(labels) if labels else ('Пропущен' if value is None else str(value))
-            text='Пояснение к ответу\n\n'+q['title']+'\n\nВаш ответ: '+answer+'\n\n'+q['note']+'\n\nНапишите пояснение сообщением (до 500 символов). «К опросу» — продолжить без пояснения.'
+            text='Необязательное пояснение · прогресс не меняется\n\n'+q['title']+'\n\nВаш ответ: '+answer+'\n\n'+q['note']+'\n\nНапишите пояснение сообщением (до 500 символов). «К опросу» — продолжить без пояснения.'
             rows=[[dict(text='К опросу',callback_data=s['nonce']+'|cancelnote'),dict(text='Изменить ответ',callback_data=s['nonce']+'|back')]]
             return self.render_message(chat,s,'note:'+s['note_for'],text,rows)
         # Migrate an old explanation pre-toggle without touching saved answers.
@@ -118,7 +133,7 @@ class SurveyBot:
             s['nonce']=secrets.token_hex(3)
             self.store.save(chat,s)
             rows=[[dict(text='Пояснить ответ',callback_data=s['nonce']+'|prevnote')]] if self.previous_note(s) else []
-            return self.send(chat,'Спасибо! '+('Для продолжения исследования нужно подтвердить, что вы регулярно участвуете в уходе за собакой.' if s['screened_out'] else 'Ответы сохранены и помогут понять реальные задачи владельцев собак.'),rows)
+            return self.send(chat,('Проверка завершена.\n\n' if s['screened_out'] else 'Опрос завершён ✅\n\n')+'Спасибо! '+('Для продолжения исследования нужно подтвердить, что вы регулярно участвуете в уходе за собакой.' if s['screened_out'] else 'Ответы сохранены и помогут понять реальные задачи владельцев собак.'),rows)
         q=self.engine.questions[qid]
         s['nonce']=secrets.token_hex(3)
         s.setdefault('selected',[])
@@ -128,7 +143,7 @@ class SurveyBot:
         if qid=='P01': prefix=self.engine.instrument['price']+'\n\n'
         if qid=='Q32': prefix=self.engine.instrument['invitation']+'\n\n'
         if qid=='S04': q= dict(q,help='Если собак несколько: '+q.get('help',''))
-        text=prefix+q['title']
+        text=self.progress_header(s)+prefix+q['title']
         if q.get('help'): text+='\n\n'+q['help']
         rows=[]
         options=self.engine.options(qid,s['participant'])
