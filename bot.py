@@ -51,6 +51,37 @@ class SurveyBot:
         if mode != 'core': raise ValueError('Invalid mode')
         self.api,self.store,self.mode=api,store,mode
         self.engine=Engine()
+        self.store.seed_reminders(self.engine.instrument['version'])
+
+    def reminder_eligible(self,s):
+        return not self.outdated(s) and s.get('started') and not s.get('complete') and not s.get('screened_out')
+
+    def send_due_reminder(self,now=None):
+        now=time.time() if now is None else now
+        for chat,s in self.store.reminder_candidates(now):
+            if not self.reminder_eligible(s): continue
+            if not self.store.claim_reminder(chat,s['participant'],now): continue
+            try:
+                self.send(chat,'Привет! 🐶 Вы начали опрос Whoof. Продолжим с места, где остановились?',[
+                    [dict(text='Продолжить',callback_data='reminder:resume:'+s['participant'])],
+                    [dict(text='Не напоминать',callback_data='reminder:stop:'+s['participant'])],
+                ])
+            except RuntimeError:
+                print('Reminder delivery unavailable; no repeat will be attempted.')
+            return  # Bound outgoing work to one attempt per polling scan.
+
+    def reminder_callback(self,chat,s,data):
+        _,action,participant=data.split(':',2)
+        if not s or participant!=s['participant']:
+            return self.send(chat,'Это напоминание от прежней анкеты. Для начала или продолжения — /start.')
+        if action=='stop':
+            self.store.stop_reminders(chat,participant)
+            return self.send(chat,'Хорошо, напоминать не буду. Прогресс сохранён. Продолжить можно через /start.')
+        if action!='resume': return
+        if self.outdated(s): return self.version_notice(chat)
+        if s.get('complete'): return self.send(chat,'Спасибо, ответы уже сохранены ✅')
+        s.pop('render_key',None)
+        return self.render(chat,s)
 
     def process(self,update):
         update_id=update['update_id']
@@ -86,7 +117,7 @@ class SurveyBot:
 
     def privacy(self,chat,s=None):
         rows=[] if s and s.get('started') else [[dict(text='Начать опрос',callback_data='begin')]]
-        return self.send(chat,self.engine.instrument['privacy']+'\n\nКоманды и помощь — /help.',rows)
+        return self.send(chat,self.engine.instrument['privacy']+'\n\nЕсли прервёте опрос, один раз напомним через 24 часа. Отключить — /noremind.\nКоманды и помощь — /help.',rows)
 
     def outdated(self,s):
         return s.get('version') != self.engine.instrument['version'] or s.get('mode') != 'core'
@@ -220,15 +251,20 @@ class SurveyBot:
         if not msg or msg.get('chat',{}).get('type')!='private': return
         chat=msg['chat']['id']; text=msg.get('text','') if not cb else ''
         s=self.store.load(chat)
+        if s and self.reminder_eligible(s): self.store.reminder_activity(chat,s['participant'])
         if cb:
             # Acknowledge even obsolete callbacks so the client stops spinning.
             self.api.call('answerCallbackQuery',callback_query_id=cb['id'])
+            action=cb.get('data','')
+            if action.startswith(('reminder:resume:','reminder:stop:')):
+                return self.reminder_callback(chat,s,action)
             if not s: return self.start(chat)
             if self.outdated(s): return self.version_notice(chat)
-            action=cb.get('data','')
             if action=='privacy': return self.privacy(chat,s)
             if action=='begin' and not s.get('started'):
-                s['started']=True; self.store.save(chat,s); return self.render(chat,s)
+                s['started']=True; self.store.save(chat,s)
+                self.store.reminder_activity(chat,s['participant'])
+                return self.render(chat,s)
             nonce,sep,action=action.partition('|')
             if not sep or nonce!=s['nonce']: return self.send(chat,'Этот вопрос уже изменился. Отвечайте на последнее сообщение или нажмите /start.')
             if action=='prevnote' and not s.get('note_for'):
@@ -272,7 +308,10 @@ class SurveyBot:
         if text=='/delete':
             self.store.delete(chat); return self.send(chat,'Анкета и контакт удалены из локального хранилища Whoof. Для новой анкеты — /start.')
         if text=='/privacy': return self.privacy(chat,s)
-        if text=='/help': return self.send(chat,'/start — начать или продолжить\n/back — предыдущий ответ\n/skip — пропустить\n/note текст — пояснение к предыдущему ответу\n/privacy — как храним ответы\n/delete — удалить анкету и контакт')
+        if text=='/noremind':
+            if s: self.store.stop_reminders(chat,s['participant'])
+            return self.send(chat,'Напоминаний не будет. Начать или продолжить опрос можно через /start.')
+        if text=='/help': return self.send(chat,'/start — начать или продолжить\n/back — предыдущий ответ\n/skip — пропустить\n/note текст — пояснение к предыдущему ответу\n/privacy — как храним ответы\n/noremind — отключить напоминание\n/delete — удалить анкету и контакт')
         if not s: return self.start(chat)
         if self.outdated(s): return self.version_notice(chat)
         if s.get('complete') and not s.get('note_for'): return self.send(chat,'Ответы уже сохранены. /delete — удалить данные.')
@@ -307,13 +346,15 @@ def main():
     # Never delete or overwrite an existing webhook automatically.
     if api.call('getWebhookInfo').get('url'): parser.error('An existing webhook is active; stop it explicitly before polling.')
     print('Whoof bot ready; stop with Ctrl-C. No answers are printed.')
-    offset=store.offset(); last_purge=time.monotonic()
+    offset=store.offset(); last_purge=time.monotonic(); last_reminder=0
     while True:
         try:
             updates=api.call('getUpdates',offset=offset,timeout=25,allowed_updates=['message','callback_query'])
             for update in updates:
                 bot.process(update)
                 offset=store.offset()
+            if time.monotonic()-last_reminder>=60:
+                last_reminder=time.monotonic(); bot.send_due_reminder()
             if time.monotonic()-last_purge>3600: store.purge_expired(); last_purge=time.monotonic()
         except RuntimeError as e:
             offset=store.offset()

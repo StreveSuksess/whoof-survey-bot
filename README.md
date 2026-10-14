@@ -22,3 +22,8 @@ python3 -m unittest discover -s survey-kit/results -p 'test_*.py' -q
 The minimal GitHub runtime is deployed through ordinary Play2Go VNC. deploy/install-short.sh validates the live new schema, creates a private runtime/SQLite backup, installs only runtime files, and restarts the existing bot and independent Sheets timer. Credentials stay outside Git and are unchanged.
 
 The welcome is a short Whoof 🐶 greeting. Full Telegram privacy details are available via Как храним ответы and /privacy; /help lists commands. Study version/questions/storage are unchanged by welcome copy updates.
+
+## Incomplete Telegram surveys
+One reminder is attempted after 24 hours without participant activity, only for current, started and incomplete surveys. Continue resumes the latest question; Don't remind and /noremind disable it. Ignoring it never produces another ping, even after restart or later resumed inactivity. Metadata is private in responses.sqlite and excluded from research exports. Delivery is claimed before the network request; uncertain or failed sends are not retried. Existing poller checks once per minute, one recipient per scan. /delete also removes reminder metadata. deploy/install-reminders.sh creates a private pre-migration backup and updates the bot only.
+
+Run reminder and survey checks: `cd survey-kit && python3 -m unittest test_survey test_reminders -q`.
