@@ -76,8 +76,17 @@ class SurveyBot:
         s=dict(participant=secrets.token_hex(8),version=self.engine.instrument['version'],mode=self.mode,
                channel=channel[:64],answers={},done=[],nonce='',started=False,complete=False,screened_out=False)
         self.store.save(chat,s)
-        text=self.engine.instrument['intro']+'\n\n'+self.engine.instrument['privacy']+'\n\nВ каждом вопросе видно, сколько осталось. Число уточняется по вашим ответам; пояснения необязательны.\n\nМожно остановиться и продолжить через /start. /back — предыдущий ответ, /skip — пропустить. /delete — удалить данные. Ориентир полной анкеты — 5–7 минут; время уточним в пробном прохождении.'
-        return self.send(chat,text,[[dict(text='Начать опрос',callback_data='begin')]])
+        return self.welcome(chat)
+
+    def welcome(self,chat):
+        return self.send(chat,self.engine.instrument['intro'],[
+            [dict(text='Начать опрос',callback_data='begin')],
+            [dict(text='Как храним ответы',callback_data='privacy')],
+        ])
+
+    def privacy(self,chat,s=None):
+        rows=[] if s and s.get('started') else [[dict(text='Начать опрос',callback_data='begin')]]
+        return self.send(chat,self.engine.instrument['privacy']+'\n\nКоманды и помощь — /help.',rows)
 
     def outdated(self,s):
         return s.get('version') != self.engine.instrument['version'] or s.get('mode') != 'core'
@@ -121,7 +130,7 @@ class SurveyBot:
         return result
 
     def render(self,chat,s):
-        if not s.get('started'): return self.send(chat,'Можно начать опрос или вернуться позже.',[[dict(text='Начать',callback_data='begin')]])
+        if not s.get('started'): return self.welcome(chat)
         if s.get('note_for'):
             q=self.engine.questions[s['note_for']]
             s['nonce']=secrets.token_hex(3); self.store.save(chat,s)
@@ -217,6 +226,7 @@ class SurveyBot:
             if not s: return self.start(chat)
             if self.outdated(s): return self.version_notice(chat)
             action=cb.get('data','')
+            if action=='privacy': return self.privacy(chat,s)
             if action=='begin' and not s.get('started'):
                 s['started']=True; self.store.save(chat,s); return self.render(chat,s)
             nonce,sep,action=action.partition('|')
@@ -261,7 +271,8 @@ class SurveyBot:
             return self.start(chat,payload[1] if len(payload)>1 else 'direct')
         if text=='/delete':
             self.store.delete(chat); return self.send(chat,'Анкета и контакт удалены из локального хранилища Whoof. Для новой анкеты — /start.')
-        if text=='/help': return self.send(chat,'/start — начать или продолжить\n/back — предыдущий ответ\n/skip — пропустить\n/note текст — пояснение к предыдущему ответу\n/delete — удалить анкету и контакт')
+        if text=='/privacy': return self.privacy(chat,s)
+        if text=='/help': return self.send(chat,'/start — начать или продолжить\n/back — предыдущий ответ\n/skip — пропустить\n/note текст — пояснение к предыдущему ответу\n/privacy — как храним ответы\n/delete — удалить анкету и контакт')
         if not s: return self.start(chat)
         if self.outdated(s): return self.version_notice(chat)
         if s.get('complete') and not s.get('note_for'): return self.send(chat,'Ответы уже сохранены. /delete — удалить данные.')

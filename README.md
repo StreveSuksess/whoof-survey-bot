@@ -20,3 +20,5 @@ python3 -m unittest discover -s survey-kit -p test_survey.py -q
 python3 -m unittest discover -s survey-kit/results -p 'test_*.py' -q
 
 The minimal GitHub runtime is deployed through ordinary Play2Go VNC. deploy/install-short.sh validates the live new schema, creates a private runtime/SQLite backup, installs only runtime files, and restarts the existing bot and independent Sheets timer. Credentials stay outside Git and are unchanged.
+
+The welcome is a short Whoof 🐶 greeting. Full Telegram privacy details are available via Как храним ответы and /privacy; /help lists commands. Study version/questions/storage are unchanged by welcome copy updates.

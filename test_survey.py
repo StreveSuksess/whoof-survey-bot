@@ -31,6 +31,21 @@ class SurveyTests(unittest.TestCase):
         self.api = FakeTelegram()
         self.bot = SurveyBot(self.api, self.store)
 
+    def test_welcome_details_do_not_start_or_change_answers(self):
+        self.bot.start(1)
+        welcome=self.api.calls[-1][1]
+        self.assertLess(len(welcome['text']),240)
+        self.assertIn('🐶',welcome['text'])
+        self.assertNotIn('12 месяцев',welcome['text'])
+        s=self.store.load(1)
+        self.bot.handle({'callback_query':{'id':'privacy','data':'privacy','message':{'chat':{'id':1,'type':'private'}}}})
+        self.assertIn('12 месяцев',self.api.calls[-1][1]['text'])
+        self.assertEqual(self.store.load(1),s)
+        self.bot.start(1)
+        self.assertEqual(self.api.calls[-1][1]['text'],welcome['text'])
+        self.bot.handle({'callback_query':{'id':'begin','data':'begin','message':{'chat':{'id':1,'type':'private'}}}})
+        self.assertTrue(self.store.load(1)['started'])
+
     def test_no_episode_or_unknown(self):
         for v in ['c1', 'c6', None]:
             route = self.e.route({'Q08': v})
