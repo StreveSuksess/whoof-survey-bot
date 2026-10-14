@@ -1,34 +1,22 @@
-# Active short questionnaire — 14 October 2026
+# Whoof short survey
 
-Telegram and Google Forms use the17-question short questionnaire. Fillout is not an active source. Optional Other text is an explanation, never an extra required step. Existing old test sessions require /delete then /start; no old answers are migrated. Progress counts only reachable questions. Interview contacts remain separate.
+Active source: approved 17-question quantitative section in the existing collaborative Google Doc. Runtime version: whoof-quant-2026-10-14-short.
+Two active channels: Telegram @whoofserveybot and existing Google Forms. Fillout is excluded.
 
-Active version: whoof-quant-2026-10-14-short. Short route11questions, up to five episode details, plus optional contact.5–7minutes is an unmeasured pilot target.
+## Flow
+Screening plus10common questions; up to five questions about a recent case; optional contact after consent. Unknown frequency, no case, old or skipped date go directly to everyday questions. All answers are optional; a skipped screening ends the survey. Other text uses an optional explanation and adds no required step.5–7minutes is an unmeasured pilot target.
 
-# Whoof Telegram survey
+Google uses16main questions+fiveoptional explanations in six sections and a separate contact form. The new native raw destination is Ответы на форму (2) in the existing answer workbook. The original raw sheet and old Telegram test rows are retained. Exact labels/codes match both channels; Google checkbox exclusives are explained in the prompt and flagged during normalization.
 
-Python 3.10+ / standard library / SQLite / systemd. Core quantitative questionnaire for dog owners. Bot: [@whoofserveybot](https://t.me/whoofserveybot).
+## Code
+instrument.json is the active runtime source. short-v2/instrument.json and short-v2/build.py hold its research source; build_instrument.py copies the approved short JSON after checks. Former long instrument/generator/tests live in source/long-v1 and are inactive. Existing older Google/Fillout export builders describe the historical long study and must not be used to update the active form.
 
-## Install on the existing Whoof server
+engine.py routes and validates; presentation.py provides readable short button labels with expandable exact wording; bot.py implements polling/progress/back/skip/notes/version guard. storage.py separates progress from consented contacts. results/ handles read-only snapshots and two-workbook synchronization.
 
-As root, clone this repository into a new directory. Inspect existing `/opt/whoof-survey`, `/etc/whoof-survey.env` and `/var/lib/whoof-survey` before an upgrade. Preserve existing runtime and participant data.
+Old test sessions are preserved until their owner sends /delete, then /start. They are never migrated or included as current responses. The bot avatar and existing URLs remain unchanged.
 
-```sh
-git clone https://github.com/StreveSuksess/whoof-survey-bot.git /tmp/whoof-survey-source
-cd /tmp/whoof-survey-source
-python3 -m unittest discover -p 'test_*.py' -v
-python3 deploy/setup-token.py
-sh deploy/install.sh
-systemctl status whoof-survey --no-pager
-```
+## Checks and deployment
+python3 -m unittest discover -s survey-kit -p test_survey.py -q
+python3 -m unittest discover -s survey-kit/results -p 'test_*.py' -q
 
-`setup-token.py` asks for the token with echo disabled, checks the exact Whoof bot identity and absence of a webhook, and creates root0600 `/etc/whoof-survey.env`. It refuses to replace an existing file. `--hex` accepts lowercase hexadecimal input for a VNC keyboard. Never put a token in a shell command, GitHub or logs.
-
-The installer uses existing Python/systemd, creates a dedicated service user and private state directory, and enables one polling service. It does not install packages, modify networking or reboot the host. The bot opens no incoming port. Systemd restarts failures and starts it at boot.
-
-## Participant flow and data
-
-One question at a time, inline buttons, branching, saved progress, `/start`, `/back`, `/skip`, `/help`, `/delete`. Answer mutations and update cursor commit together; outgoing delivery can fail after commit, and `/start` resumes. Core is the deployment default.
-
-Private databases live in `/var/lib/whoof-survey/`: responses/Telegram chat IDs and voluntary contacts are stored separately, linked by participant code. This is not anonymity or encryption. Inactive records are purged after365 days. Organizer must also manage exported copies and backups.
-
-See [operations](deploy/README.md) for status/restart/export commands. Deployed on Linux/systemd on2026-10-10. Progress/branding update deployed from8ce8be9 on2026-10-13; all37 tests pass on the host. Every question shows its ordinal, visual progress and remaining reachable range (including current); unknown branches narrow as answered, optional explanation notes do not advance progress. Screening is one separate check. The exact Figma mascot is installed as the bot avatar; source assets are in assets/. Service active/enabled, Telegram readiness checked; existing private data retained. Short meaningful text buttons replace numbers, one option per row; exact source labels can be expanded with “Полные варианты”. The bot advances immediately after an answer. Optional explanation is added to the immediately previous answer through “Пояснить прошлый ответ”, with saved next-question selections retained on cancel. Prior pending notes remain compatible. Organizer confirmed the original introduction; live verification of the new controls and full participant path remains pending.
+The minimal GitHub runtime is deployed through ordinary Play2Go VNC. deploy/install-short.sh validates the live new schema, creates a private runtime/SQLite backup, installs only runtime files, and restarts the existing bot and independent Sheets timer. Credentials stay outside Git and are unchanged.
