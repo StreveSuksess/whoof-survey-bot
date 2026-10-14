@@ -6,6 +6,7 @@ from urllib.parse import quote
 ANSWERS_ID = os.getenv('WHOOF_ANSWERS_ID','')
 CONTACTS_ID = os.getenv('WHOOF_CONTACTS_ID','')
 RAW_TAB = 'Ответы на форму (1)'
+ANSWERS_RAW_TAB = 'Ответы на форму (2)'
 ALLOWED = {ANSWERS_ID: {'Google','Telegram','Все ответы','Сводка'},
            CONTACTS_ID: {'Google','Контакты'}}
 
@@ -73,7 +74,7 @@ class Client:
         if statuses:
             if book!=ANSWERS_ID: raise ValueError('Wrong summary workbook')
             requests.append({'updateCells':{'range':{'sheetId':view['sheets']['Сводка']['sheetId'],
-                'startRowIndex':4,'endRowIndex':7,'startColumnIndex':3,'endColumnIndex':4},
+                'startRowIndex':4,'endRowIndex':4+len(statuses),'startColumnIndex':3,'endColumnIndex':4},
                 'rows':[{'values':[cell(v)]} for v in statuses],'fields':'userEnteredValue'}})
         if not requests: return
         self.request('POST',book,':batchUpdate',json={'requests':requests})

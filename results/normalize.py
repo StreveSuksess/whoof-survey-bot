@@ -20,23 +20,18 @@ def norm(value):
 
 
 def mapping(headers):
-    descriptors = []
+    if not headers or norm(headers[0]) not in ('отметкавремени','timestamp'):
+        raise ValueError('Missing native Google timestamp')
+    descriptors=[]
+    used=set()
     for field in SCHEMA['fields']:
-        if field['type'] == 'money':
-            descriptors.append((field['id']+'_status', field, True))
-        descriptors.append((field['id'], field, False))
-    if len(headers) != 71 or norm(headers[0]) not in ('отметкавремени', 'timestamp'):
-        raise ValueError('Expected timestamp and 70 native Google question columns')
-    for title, (qid, field, status) in zip(headers[1:], descriptors):
-        if field['type'] == 'money':
-            expected = field['title'] if status else ('Сумма, ₽' if qid == 'Q14' else 'Сумма общих расходов, ₽')
-            valid = norm(title) == norm(expected)
-        elif qid.endswith('_note'):
-            valid = norm(title).startswith(norm('Хотите пояснить ответ'))
-        else:
-            valid = norm(title) in {norm(t) for t in ALIASES[qid]}
-        if not valid:
-            raise ValueError('Native header mismatch at '+qid)
+        expected={norm(t) for t in ALIASES[field['id']]}
+        matches=[i for i,t in enumerate(headers) if i and norm(t) in expected]
+        if len(matches)!=1: raise ValueError('Missing/ambiguous current column: '+field['id'])
+        index=matches[0]
+        if index in used: raise ValueError('Repeated native column')
+        used.add(index)
+        descriptors.append((index,field['id'],field))
     return descriptors
 
 
@@ -93,54 +88,30 @@ def answers(rows):
         raise ValueError('Missing raw Google header')
     descriptors = mapping(rows[0])
     output = []
-    for raw, stamp, identity, occurrence in source_rows(rows, 'whoof-main-v1'):
+    for raw, stamp, identity, occurrence in source_rows(rows, SCHEMA['version']):
         if len(raw) > len(rows[0]):
             raise ValueError('Unexpected source columns')
         values, warnings = {}, []
-        for index, (qid, field, status) in enumerate(descriptors, 1):
+        for index,qid,field in descriptors:
             value = raw[index] if index < len(raw) else ''
-            if status:
-                opts = [dict(code=c,label=l) for c,l in zip(('amount','unknown','refused'),
-                        ('Укажу сумму','Не знаю / не могу оценить.','Не хочу отвечать.'))]
-                values[qid] = choice(value, opts)
-            elif field['type'] in ('single', 'multi'):
-                values[qid] = choice(value, field['options'], field['type'] == 'multi')
-            elif field['type'] == 'money':
-                selected = values[qid+'_status']
-                if selected in ('unknown', 'refused'):
-                    values[qid] = selected
-                elif selected != 'amount' or value == '':
-                    values[qid] = ''
-                else:
-                    amount = float(str(value).replace(',','.'))
-                    if not math.isfinite(amount) or not 0 <= amount < 1e12:
-                        raise ValueError('Invalid money')
-                    values[qid] = amount
+            if field['type'] in ('single','multi'):
+                values[qid] = choice(value,field['options'],field['type']=='multi')
             else:
-                if not isinstance(value, str) or len(value) > 1000:
-                    raise ValueError('Invalid source text')
-                values[qid] = value
+                if not isinstance(value,str) or len(value)>500: raise ValueError('Invalid source text')
+                values[qid]=value
         screened = values['S03'] not in ('c1', 'c2')
         no_episode = values['Q08'] not in ('c2','c3','c4','c5')
-        stale_episode = values['Q09'] == 'c5'
-        no_wearable = values['Q26'] not in ('c1','c2')
+        stale_episode = values['Q09'] not in ('c1','c2','c3','c4')
         for field in SCHEMA['fields']:
-            qid = field['id']; base = qid.split('_')[0]
-            if (screened and base != 'S03' or no_episode and re.fullmatch(r'Q(09|10|11|12|13|14|15)',base)
-                or stale_episode and re.fullmatch(r'Q(10|11|12|13|14|15)',base)
-                or no_wearable and base in ('Q26a','Q26b')):
-                values[qid] = ''
-            if qid.endswith('_other') and qid != 'Q17_other':
-                parent = next(f for f in SCHEMA['fields'] if f['id'] == qid[:-6])
-                selected = str(values[parent['id']]).split('; ')
-                if not any(o.get('other') and o['code'] in selected for o in parent['options']):
-                    values[qid] = ''
-            if field['type'] == 'multi' and values[qid]:
-                codes = values[qid].split('; ')
+            qid=field['id']; base=qid.split('_')[0]
+            if (screened and base!='S03'
+                or no_episode and base in ('Q09','Q11','Q12','Q13','Q15')
+                or stale_episode and base in ('Q11','Q12','Q13','Q15')):
+                values[qid]=''
+            if field['type']=='multi' and values[qid]:
+                codes=values[qid].split('; ')
                 if len(codes)>1 and any(o.get('exclusive') and o['code'] in codes for o in field['options']):
                     warnings.append(qid+': взаимоисключающие варианты')
-        if values['Q26a'] != 'c1': values['Q26a_action'] = ''
-        if values['Q26b'] != 'c1': values['Q26b_reason'] = ''
         if occurrence > 1: warnings.append('Совпадающие отметки времени; не менять порядок исходных строк')
         output.append(['Google',identity,stamp,stamp,SCHEMA['version'],'core','google_form',
                        'Не подходит' if screened else 'Завершена','Нет','; '.join(warnings)]

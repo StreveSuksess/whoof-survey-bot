@@ -8,23 +8,18 @@ os.environ.setdefault('WHOOF_ANSWERS_ID','synthetic-answers-book')
 os.environ.setdefault('WHOOF_CONTACTS_ID','synthetic-contacts-book')
 import normalize as n
 from direct_sync import sync_once, date_serial
-from sheets_api import ANSWERS_ID, CONTACTS_ID, RAW_TAB, Client, cell
+from sheets_api import ANSWERS_ID, CONTACTS_ID, RAW_TAB, ANSWERS_RAW_TAB, Client, cell
 
 
 def raw_headers():
     result=['Отметка времени']
-    for f in n.SCHEMA['fields']:
-        if f['type']=='money':
-            result += [f['title'],'Сумма, ₽' if f['id']=='Q14' else 'Сумма общих расходов, ₽']
-        elif f['id'].endswith('_note'):
-            result.append('Хотите пояснить ответ или описать случай?')
-        else: result.append(n.ALIASES[f['id']][-1])
+    for f in n.SCHEMA['fields']: result.append(n.ALIASES[f['id']][-1])
     return result
 
 
 def raw_row(values, stamp=46000.5):
     descriptors=n.mapping(raw_headers())
-    return [stamp]+[values.get(qid,'') for qid,_,_ in descriptors]
+    return [stamp]+[values.get(qid,'') for _,qid,_ in descriptors]
 
 
 def label(qid,code):
@@ -39,13 +34,14 @@ def contact_rows(contact='@synthetic_contact'):
 
 class MemoryAPI:
     def __init__(self):
-        self.books={ANSWERS_ID:{RAW_TAB:[raw_headers(),raw_row({'S03':label('S03','c1')})],
+        self.books={ANSWERS_ID:{ANSWERS_RAW_TAB:[raw_headers(),raw_row({'S03':label('S03','c1')})],
                     **{t:[n.HEADERS] for t in ('Google','Telegram','Fillout','Все ответы')},'Сводка':[['Сводка']]},
                     CONTACTS_ID:{RAW_TAB:contact_rows(),'Google':[n.CONTACT_GOOGLE_HEADERS],
                                  'Контакты':[n.CONTACT_HEADERS]}}
-        self.calls=[]; self.fail_answers=False
+        self.calls=[]; self.fail_answers=False; self.reads=[]
     def read(self,book,tabs):
-        return {'values':copy.deepcopy(self.books[book]),'timezone':'Europe/Moscow','sheets':{}}
+        self.reads.append((book,tabs))
+        return {'values':copy.deepcopy({t:self.books[book][t] for t in tabs}),'timezone':'Europe/Moscow','sheets':{}}
     def replace(self,book,view,replacements,statuses=None):
         if book==ANSWERS_ID and self.fail_answers: raise RuntimeError('Synthetic write interruption')
         self.calls.append((book,set(replacements)))
@@ -54,22 +50,31 @@ class MemoryAPI:
 
 
 class DirectTests(unittest.TestCase):
-    def test_actual_browser_copied_headers(self):
-        root=Path(__file__).parent
-        self.assertEqual(len(n.mapping(json.loads((root/'live-main-headers.json').read_text()))),70)
-        self.assertEqual(n.contacts([json.loads((root/'live-contact-headers.json').read_text())]),[])
+    def test_current_columns_ignore_preserved_removed_columns(self):
+        live=json.loads((Path(__file__).parent/'live-main-headers.json').read_text())
+        self.assertEqual(len(n.mapping(live)),21)
+        headers=raw_headers()+['Старый вопрос о расходах']
+        self.assertEqual(len(n.mapping(headers)),21)
+        with self.assertRaises(ValueError): n.mapping(headers+[headers[4]])
+        with self.assertRaises(ValueError): n.mapping(headers[:4]+headers[5:])
 
-    def test_google_zero_refusal_and_hidden_amount(self):
-        rows=[raw_headers(),raw_row({'S03':label('S03','c1'),'Q08':label('Q08','c2'),
-              'Q09':label('Q09','c1'),'Q14_status':'Укажу сумму','Q14':0,
-              'Q23_status':'Не хочу отвечать.','Q23':120})]
-        values=dict(zip((f['id'] for f in n.SCHEMA['fields']),n.answers(rows)[0][10:]))
-        self.assertEqual(values['Q14'],0); self.assertEqual(values['Q23'],'refused')
+    def test_unknown_zero_and_skipped_are_different(self):
+        values=[]
+        for code in ('c1','c6',''):
+            raw=label('Q08',code) if code else ''
+            row=n.answers([raw_headers(),raw_row({'S03':label('S03','c1'),'Q08':raw})])[0]
+            values.append(row[n.HEADERS.index('Q08')])
+        self.assertEqual(values,['c1','c6',''])
 
-    def test_screening_clears_hidden_fields_and_note_occurrences(self):
-        row=n.answers([raw_headers(),raw_row({'S03':label('S03','c3'),'Q01_note':'hidden'})])[0]
-        self.assertEqual(row[7],'Не подходит'); self.assertEqual(row[10+next(i for i,f in enumerate(n.SCHEMA['fields']) if f['id']=='Q01_note')],'')
-        self.assertEqual(len(n.mapping(raw_headers())),70)
+    def test_screening_and_old_or_missing_date_clear_case_notes(self):
+        for date in ('c5',''):
+            row=n.answers([raw_headers(),raw_row({'S03':label('S03','c1'),'Q08':label('Q08','c2'),
+                'Q09':label('Q09',date) if date else '', 'Q11':label('Q11','c1'),'Q11_note':'hidden','Q15a':label('Q15a','c3')})])[0]
+            self.assertEqual(row[n.HEADERS.index('Q11_note')],'')
+            self.assertEqual(row[n.HEADERS.index('Q15a')],'c3')
+        row=n.answers([raw_headers(),raw_row({'S03':label('S03','c3'),'Q34_note':'hidden'})])[0]
+        self.assertEqual(row[7],'Не подходит')
+        self.assertEqual(row[n.HEADERS.index('Q34_note')],'')
 
     def test_comma_inside_multi_label_and_ambiguous_fails(self):
         opts=[dict(code='a',label='A, B'),dict(code='b',label='C')]
@@ -81,7 +86,7 @@ class DirectTests(unittest.TestCase):
         a=raw_row({'S03':label('S03','c1')},46000.1)
         b=raw_row({'S03':label('S03','c1')},46000.2)
         original=n.answers([raw_headers(),a,b])
-        changed=raw_row({'S03':label('S03','c1'),'Q01_note':'new'},46000.2)
+        changed=raw_row({'S03':label('S03','c1'),'Q34_note':'new'},46000.2)
         self.assertEqual(original[1][1],n.answers([raw_headers(),changed])[0][1])
         duplicate=n.answers([raw_headers(),a,a])
         self.assertNotEqual(duplicate[0][1],duplicate[1][1])
@@ -97,7 +102,8 @@ class DirectTests(unittest.TestCase):
         api.books[CONTACTS_ID][RAW_TAB]=contact_rows()[:1]
         sync_once(api,payload)
         self.assertEqual(len(api.books[CONTACTS_ID]['Контакты']),1)
-        self.assertTrue(all(RAW_TAB not in tabs for _,tabs in api.calls))
+        self.assertTrue(all(RAW_TAB not in tabs and ANSWERS_RAW_TAB not in tabs for _,tabs in api.calls))
+        self.assertTrue(all('Fillout' not in tabs for _,tabs in api.reads))
 
     def test_cross_file_retry_preserves_notes(self):
         api=MemoryAPI(); payload={'records':[],'contacts':[]}
@@ -125,7 +131,7 @@ class DirectTests(unittest.TestCase):
         self.assertEqual(len(api.books[ANSWERS_ID]['Telegram']),1)
 
     def test_schema_error_before_any_write(self):
-        api=MemoryAPI(); api.books[ANSWERS_ID][RAW_TAB][0][4]='unexpected'
+        api=MemoryAPI(); api.books[ANSWERS_ID][ANSWERS_RAW_TAB][0][4]='unexpected'
         with self.assertRaises(ValueError): sync_once(api,{'records':[],'contacts':[]})
         self.assertEqual(api.calls,[])
 

@@ -48,7 +48,7 @@ class Telegram:
 
 class SurveyBot:
     def __init__(self,api,store,mode='core'):
-        if mode not in ('core','concept','price'): raise ValueError('Invalid mode')
+        if mode != 'core': raise ValueError('Invalid mode')
         self.api,self.store,self.mode=api,store,mode
         self.engine=Engine()
 
@@ -68,6 +68,7 @@ class SurveyBot:
     def start(self,chat,channel='direct'):
         s=self.store.load(chat)
         if s:
+            if self.outdated(s): return self.version_notice(chat)
             if s.get('note_for'): return self.render(chat,s)
             if s.get('complete'):
                 return self.send(chat,'Спасибо, ваши ответы уже сохранены. /delete удаляет анкету и контакт. Для новой анкеты сначала удалите текущую.')
@@ -75,8 +76,14 @@ class SurveyBot:
         s=dict(participant=secrets.token_hex(8),version=self.engine.instrument['version'],mode=self.mode,
                channel=channel[:64],answers={},done=[],nonce='',started=False,complete=False,screened_out=False)
         self.store.save(chat,s)
-        text=self.engine.instrument['intro']+'\n\n'+self.engine.instrument['privacy']+'\n\nВ каждом вопросе видно, сколько осталось. Число уточняется по вашим ответам; пояснения необязательны.\n\nМожно остановиться и продолжить через /start. /back — предыдущий ответ, /skip — пропустить. /delete — удалить данные. Ориентир полной анкеты — 12–15 минут; время уточним в пробном прохождении.'
+        text=self.engine.instrument['intro']+'\n\n'+self.engine.instrument['privacy']+'\n\nВ каждом вопросе видно, сколько осталось. Число уточняется по вашим ответам; пояснения необязательны.\n\nМожно остановиться и продолжить через /start. /back — предыдущий ответ, /skip — пропустить. /delete — удалить данные. Ориентир полной анкеты — 5–7 минут; время уточним в пробном прохождении.'
         return self.send(chat,text,[[dict(text='Начать опрос',callback_data='begin')]])
+
+    def outdated(self,s):
+        return s.get('version') != self.engine.instrument['version'] or s.get('mode') != 'core'
+
+    def version_notice(self,chat):
+        return self.send(chat,'Анкета сократилась. Чтобы пройти новую версию с начала, отправьте /delete, затем /start. Текущие ответы и контакт будут удалены только по вашей команде /delete.')
 
     def current(self,s):
         route=self.engine.route(s['answers'],s['mode'],s['participant'])
@@ -139,10 +146,8 @@ class SurveyBot:
         s.setdefault('selected',[])
         self.store.save(chat,s)
         prefix=''
-        if qid=='Q28': prefix=self.engine.instrument['concept']+'\n\n'
-        if qid=='P01': prefix=self.engine.instrument['price']+'\n\n'
         if qid=='Q32': prefix=self.engine.instrument['invitation']+'\n\n'
-        if qid=='S04': q= dict(q,help='Если собак несколько: '+q.get('help',''))
+        if qid=='Q01': prefix=self.engine.instrument['selection_instruction']+'\n\n'
         text=self.progress_header(s)+prefix+q['title']
         if q.get('help'): text+='\n\n'+q['help']
         rows=[]
@@ -156,6 +161,7 @@ class SurveyBot:
                 selected=o['code'] in s['selected']
                 label=('✓ ' if selected else '')+caption(qid,o)
                 rows.append([dict(text=label,callback_data=s['nonce']+'|'+o['code'])])
+        if q.get('inline_other'): text+='\n\nСвой вариант после ответа можно пояснить по желанию.'
         if q['type']=='multi':
             text+='\n\n'+('Выберите до трёх ответов' if q.get('max_choices') else 'Можно выбрать несколько ответов')+', затем нажмите «Готово».'
             rows.append([dict(text='Готово',callback_data=s['nonce']+'|done')])
@@ -209,6 +215,7 @@ class SurveyBot:
             # Acknowledge even obsolete callbacks so the client stops spinning.
             self.api.call('answerCallbackQuery',callback_query_id=cb['id'])
             if not s: return self.start(chat)
+            if self.outdated(s): return self.version_notice(chat)
             action=cb.get('data','')
             if action=='begin' and not s.get('started'):
                 s['started']=True; self.store.save(chat,s); return self.render(chat,s)
@@ -256,6 +263,7 @@ class SurveyBot:
             self.store.delete(chat); return self.send(chat,'Анкета и контакт удалены из локального хранилища Whoof. Для новой анкеты — /start.')
         if text=='/help': return self.send(chat,'/start — начать или продолжить\n/back — предыдущий ответ\n/skip — пропустить\n/note текст — пояснение к предыдущему ответу\n/delete — удалить анкету и контакт')
         if not s: return self.start(chat)
+        if self.outdated(s): return self.version_notice(chat)
         if s.get('complete') and not s.get('note_for'): return self.send(chat,'Ответы уже сохранены. /delete — удалить данные.')
         if text=='/back': return self.back(chat,s)
         if text=='/skip': return self.answer(chat,s,None)

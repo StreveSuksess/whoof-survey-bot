@@ -1,3 +1,7 @@
+# Active short-study integration — 14 October 2026
+
+Only Google Forms and Telegram are active.21contact-free fields plus10metadata columns. Main raw destination is Ответы на форму (2); former raw tab and old Telegram rows are preserved as hidden archives. Contact raw destination remains Ответы на форму (1) in its separate private workbook. Old known-version test sessions stay in SQLite but do not enter the current study; unknown versions fail closed. Optional Other detail shares the question note field. Header mapping is exact and unique; a missing column fails before writing. Legacy instructions below describe former setup and are not the active schema.
+
 # Whoof results storage
 
 Existing private native files:

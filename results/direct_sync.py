@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import normalize
-from sheets_api import Client, ANSWERS_ID, CONTACTS_ID, RAW_TAB
+from sheets_api import Client, ANSWERS_ID, CONTACTS_ID, RAW_TAB, ANSWERS_RAW_TAB
 from sync import snapshot
 
 
@@ -22,13 +22,13 @@ def check_header(rows, header):
 
 
 def sync_once(client, payload):
-    answers_view = client.read(ANSWERS_ID,[RAW_TAB,'Google','Telegram','Fillout','Все ответы','Сводка'])
+    answers_view = client.read(ANSWERS_ID,[ANSWERS_RAW_TAB,'Google','Telegram','Все ответы','Сводка'])
     contacts_view = client.read(CONTACTS_ID,[RAW_TAB,'Google','Контакты'])
     av, cv = answers_view['values'], contacts_view['values']
-    for name in ('Google','Telegram','Fillout','Все ответы'): check_header(av[name],normalize.HEADERS)
+    for name in ('Google','Telegram','Все ответы'): check_header(av[name],normalize.HEADERS)
     check_header(cv['Контакты'],normalize.CONTACT_HEADERS)
     check_header(cv['Google'],normalize.CONTACT_GOOGLE_HEADERS)
-    google_rows = normalize.answers(av[RAW_TAB])
+    google_rows = normalize.answers(av[ANSWERS_RAW_TAB])
     google_contacts = normalize.contacts(cv[RAW_TAB])
     tg_rows = [list(r) for r in payload['records']]
     tg_contacts = [list(r) for r in payload['contacts']]
@@ -38,13 +38,7 @@ def sync_once(client, payload):
         row[3] = date_serial(row[3],answers_view['timezone'])
     for row in tg_contacts:
         row[2] = date_serial(row[2],contacts_view['timezone'])
-    fillout = []
-    for raw in av['Fillout'][1:]:
-        row = raw+['']*(len(normalize.HEADERS)-len(raw))
-        if not row[1]: continue
-        if len(row)!=len(normalize.HEADERS) or row[0]!='Fillout': raise ValueError('Invalid manual Fillout record')
-        fillout.append(row)
-    all_rows = google_rows+tg_rows+fillout
+    all_rows = google_rows+tg_rows
     keys = [tuple(r[:2]) for r in all_rows]
     if len(keys)!=len(set(keys)): raise ValueError('Duplicate source identity')
     merged_contacts = normalize.merge_contacts(cv['Контакты'][1:],google_contacts+tg_contacts)
@@ -57,7 +51,7 @@ def sync_once(client, payload):
     # Each workbook is atomic. Any cross-file failure is reconciled on the next full run.
     client.replace(CONTACTS_ID,contacts_view,{'Google':contact_google,'Контакты':merged_contacts})
     client.replace(ANSWERS_ID,answers_view,{'Google':google_rows,'Telegram':tg_rows,'Все ответы':all_rows},
-                   ['Автоматически; '+stamp,'Автоматически; '+stamp,'Ручной импорт; интеграция отключена'])
+                   ['Автоматически; '+stamp,'Автоматически; '+stamp])
     return {'google':len(google_rows),'telegram':len(tg_rows),'contacts':len(merged_contacts)}
 
 

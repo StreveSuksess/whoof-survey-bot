@@ -1,3 +1,9 @@
+# Active short questionnaire — 14 October 2026
+
+Telegram and Google Forms use the17-question short questionnaire. Fillout is not an active source. Optional Other text is an explanation, never an extra required step. Existing old test sessions require /delete then /start; no old answers are migrated. Progress counts only reachable questions. Interview contacts remain separate.
+
+Active version: whoof-quant-2026-10-14-short. Short route11questions, up to five episode details, plus optional contact.5–7minutes is an unmeasured pilot target.
+
 # Whoof Telegram survey
 
 Python 3.10+ / standard library / SQLite / systemd. Core quantitative questionnaire for dog owners. Bot: [@whoofserveybot](https://t.me/whoofserveybot).

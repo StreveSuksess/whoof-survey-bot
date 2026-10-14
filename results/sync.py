@@ -52,6 +52,7 @@ def snapshot(directory, test_ids=()):
         state = json.loads(raw)
         if not state.get('started'):
             continue
+        if state.get('version') == 'whoof-quant-2026-10-10-v1': continue
         participant = state['participant']
         if not re.fullmatch(r'[a-f0-9]{16}', participant):
             raise ValueError('Invalid participant ID')

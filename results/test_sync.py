@@ -18,8 +18,8 @@ class SnapshotTests(unittest.TestCase):
         self.store = Store(self.temp.name)
         self.state = dict(participant='0123456789abcdef', version=sync.SCHEMA['version'],
                           mode='core', started=True, complete=True, screened_out=False,
-                          answers={'S03': 'c1', 'Q14': 0, 'Q23': 'refused', 'Q32': 'c1',
-                                   'Q01_note': 'Длинное пояснение', 'Q07': ['c1', 'c2']})
+                          answers={'S03': 'c1', 'Q08': 'c1', 'Q27a': 'c3', 'Q32': 'c1',
+                                   'Q34_note': 'Длинное пояснение', 'Q34': ['c1', 'c2']})
         self.store.save(987654321, self.state)
         self.store.save_contact(self.state['participant'], '@private_test_contact')
 
@@ -31,10 +31,10 @@ class SnapshotTests(unittest.TestCase):
     def test_zero_refusal_notes_and_codes(self):
         result = sync.snapshot(self.temp.name)
         fields = dict(zip(sync.FIELDS, result['records'][0][10:]))
-        self.assertEqual(fields['Q14'], 0)
-        self.assertEqual(fields['Q23'], 'refused')
-        self.assertEqual(fields['Q01_note'], 'Длинное пояснение')
-        self.assertEqual(fields['Q07'], 'c1; c2')
+        self.assertEqual(fields['Q08'], 'c1')
+        self.assertEqual(fields['Q27a'], 'c3')
+        self.assertEqual(fields['Q34_note'], 'Длинное пояснение')
+        self.assertEqual(fields['Q34'], 'c1; c2')
         self.assertEqual(result['records'][0][2], '')
 
     def test_contacts_and_chat_id_separated(self):
@@ -47,7 +47,7 @@ class SnapshotTests(unittest.TestCase):
     def test_replay_stable_rows_and_updates(self):
         first = sync.snapshot(self.temp.name)
         self.assertEqual(first['records'], sync.snapshot(self.temp.name)['records'])
-        self.state['answers']['Q14'] = 320
+        self.state['answers']['Q34_note'] = 'Обновлённое'
         self.store.save(987654321, self.state)
         changed = sync.snapshot(self.temp.name)
         self.assertEqual(first['records'][0][1], changed['records'][0][1])
@@ -94,6 +94,17 @@ class SnapshotTests(unittest.TestCase):
         finally:
             db.rollback()
             db.close()
+
+    def test_known_old_sessions_are_preserved_but_not_exported(self):
+        self.state['version']='whoof-quant-2026-10-10-v1'
+        self.store.save(987654321,self.state)
+        before=(Path(self.temp.name)/'responses.sqlite').read_bytes()
+        result=sync.snapshot(self.temp.name)
+        self.assertEqual(result['records'],[]); self.assertEqual(result['contacts'],[])
+        self.assertEqual(before,(Path(self.temp.name)/'responses.sqlite').read_bytes())
+        self.state['version']='unexpected'
+        self.store.save(987654321,self.state)
+        with self.assertRaises(ValueError): sync.snapshot(self.temp.name)
 
     def test_signature_covers_exact_unicode_body(self):
         payload = sync.snapshot(self.temp.name)
